@@ -14,6 +14,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Set PROJECT_NAME
+        run: echo "PROJECT_NAME=kdeps" >> $GITHUB_ENV
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
@@ -36,22 +39,30 @@ jobs:
 
       - name: Package binary for Linux
         run: |
-          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_amd64.tar.gz ./build/$(PROJECT_NAME)_linux_amd64
+          tar -czvf $PROJECT_NAME_${{ steps.version.outputs.new_tag }}_linux_amd64.tar.gz ./build/$PROJECT_NAME_linux_amd64
+        env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for macOS
         run: |
-          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_darwin_amd64.tar.gz ./build/$(PROJECT_NAME)_darwin_amd64
+          tar -czvf $PROJECT_NAME_${{ steps.version.outputs.new_tag }}_darwin_amd64.tar.gz ./build/$PROJECT_NAME_darwin_amd64
+        env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for Windows
         run: |
-          zip -r $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_windows_amd64.zip ./build/$(PROJECT_NAME)_windows_amd64.exe
+          zip -r $PROJECT_NAME_${{ steps.version.outputs.new_tag }}_windows_amd64.zip ./build/$PROJECT_NAME_windows_amd64.exe
+        env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for ARM
         run: |
-          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_arm.tar.gz ./build/$(PROJECT_NAME)_linux_arm
+          tar -czvf $PROJECT_NAME_${{ steps.version.outputs.new_tag }}_linux_arm.tar.gz ./build/$PROJECT_NAME_linux_arm
+        env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Create release
@@ -70,6 +81,7 @@ jobs:
         id: upload-release-asset-linux
         uses: actions/upload-release-asset@v1
         env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -81,6 +93,7 @@ jobs:
         id: upload-release-asset-macOS
         uses: actions/upload-release-asset@v1
         env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -92,6 +105,7 @@ jobs:
         id: upload-release-asset-windows
         uses: actions/upload-release-asset@v1
         env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -103,6 +117,7 @@ jobs:
         id: upload-release-asset-arm
         uses: actions/upload-release-asset@v1
         env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
