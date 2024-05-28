@@ -60,7 +60,7 @@ jobs:
 
       - name: Package binary for Windows
         run: |
-          zip -r ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_amd64.zip -C ./build/${{ env.PROJECT_NAME }}_windows_amd64 ./${{ env.PROJECT_NAME }}.exe
+          zip -r ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_amd64.zip ./build/${{ env.PROJECT_NAME }}_windows_amd64/${{ env.PROJECT_NAME }}.exe
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for ARM
