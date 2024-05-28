@@ -79,6 +79,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          tag_name: ${{ env.COMMIT_HASH }}
           release_name: DEV Release ${{ env.COMMIT_HASH }}
           body: ${{ env.COMMIT_MESSAGE }}
 
