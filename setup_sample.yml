@@ -1,0 +1,208 @@
+packages:
+  - package: a
+    name: "A"
+    sdesc: "Package A"
+    ldesc: "The first package in the alphabetical order"
+    category: example
+    requires: []
+
+  - package: b
+    name: "B"
+    sdesc: "Package B"
+    ldesc: "The second package, dependent on A"
+    category: example
+    requires:
+      - a
+
+  - package: c
+    name: "C"
+    sdesc: "Package C"
+    ldesc: "The third package, dependent on B"
+    category: example
+    requires:
+      - b
+
+  - package: d
+    name: "D"
+    sdesc: "Package D"
+    ldesc: "The fourth package, dependent on C"
+    category: example
+    requires:
+      - c
+
+  - package: e
+    name: "E"
+    sdesc: "Package E"
+    ldesc: "The fifth package, dependent on D"
+    category: example
+    requires:
+      - d
+
+  - package: f
+    name: "F"
+    sdesc: "Package F"
+    ldesc: "The sixth package, dependent on E"
+    category: example
+    requires:
+      - e
+
+  - package: g
+    name: "G"
+    sdesc: "Package G"
+    ldesc: "The seventh package, dependent on F"
+    category: example
+    requires:
+      - f
+
+  - package: h
+    name: "H"
+    sdesc: "Package H"
+    ldesc: "The eighth package, dependent on G"
+    category: example
+    requires:
+      - g
+
+  - package: i
+    name: "I"
+    sdesc: "Package I"
+    ldesc: "The ninth package, dependent on H"
+    category: example
+    requires:
+      - h
+
+  - package: j
+    name: "J"
+    sdesc: "Package J"
+    ldesc: "The tenth package, dependent on I"
+    category: example
+    requires:
+      - i
+
+  - package: k
+    name: "K"
+    sdesc: "Package K"
+    ldesc: "The eleventh package, dependent on J"
+    category: example
+    requires:
+      - j
+
+  - package: l
+    name: "L"
+    sdesc: "Package L"
+    ldesc: "The twelfth package, dependent on K"
+    category: example
+    requires:
+      - k
+
+  - package: m
+    name: "M"
+    sdesc: "Package M"
+    ldesc: "The thirteenth package, dependent on L"
+    category: example
+    requires:
+      - l
+
+  - package: n
+    name: "N"
+    sdesc: "Package N"
+    ldesc: "The fourteenth package, dependent on M"
+    category: example
+    requires:
+      - m
+
+  - package: o
+    name: "O"
+    sdesc: "Package O"
+    ldesc: "The fifteenth package, dependent on N"
+    category: example
+    requires:
+      - n
+
+  - package: p
+    name: "P"
+    sdesc: "Package P"
+    ldesc: "The sixteenth package, dependent on O"
+    category: example
+    requires:
+      - o
+
+  - package: q
+    name: "Q"
+    sdesc: "Package Q"
+    ldesc: "The seventeenth package, dependent on P"
+    category: example
+    requires:
+      - p
+
+  - package: r
+    name: "R"
+    sdesc: "Package R"
+    ldesc: "The eighteenth package, dependent on Q"
+    category: example
+    requires:
+      - q
+
+  - package: s
+    name: "S"
+    sdesc: "Package S"
+    ldesc: "The nineteenth package, dependent on R"
+    category: example
+    requires:
+      - r
+
+  - package: t
+    name: "T"
+    sdesc: "Package T"
+    ldesc: "The twentieth package, dependent on S"
+    category: example
+    requires:
+      - s
+
+  - package: u
+    name: "U"
+    sdesc: "Package U"
+    ldesc: "The twenty-first package, dependent on T"
+    category: example
+    requires:
+      - t
+
+  - package: v
+    name: "V"
+    sdesc: "Package V"
+    ldesc: "The twenty-second package, dependent on U"
+    category: example
+    requires:
+      - u
+
+  - package: w
+    name: "W"
+    sdesc: "Package W"
+    ldesc: "The twenty-third package, dependent on V"
+    category: example
+    requires:
+      - v
+
+  - package: x
+    name: "X"
+    sdesc: "Package X"
+    ldesc: "The twenty-fourth package, dependent on W"
+    category: example
+    requires:
+      - w
+
+  - package: y
+    name: "Y"
+    sdesc: "Package Y"
+    ldesc: "The twenty-fifth package, dependent on X"
+    category: example
+    requires:
+      - x
+
+  - package: z
+    name: "Z"
+    sdesc: "Package Z"
+    ldesc: "The twenty-sixth package, dependent on Y"
+    category: example
+    requires:
+      - y
+
