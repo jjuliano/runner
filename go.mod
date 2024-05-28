@@ -1,6 +1,6 @@
 module kdeps
 
-go 1.22.2
+go 1.22
 
 require (
 	github.com/lithammer/fuzzysearch v1.1.8
