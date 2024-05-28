@@ -24,7 +24,7 @@ func main() {
 	}
 
 	if command == "" {
-		fmt.Println("Usage: script [depends|rdepends|add|update|search|category|show|tree|tree-list] [package_names...]")
+		fmt.Println("Usage: kdeps [depends|rdepends|search|category|show|tree|tree-list] [package_names...]")
 		return
 	}
 
@@ -32,10 +32,6 @@ func main() {
 	resolver.LoadPackageEntries("setup.yml")
 
 	switch command {
-	case "add":
-		resolver.HandleAddCommand(packages)
-	case "update":
-		resolver.HandleUpdateCommand(packages)
 	case "show":
 		resolver.HandleShowCommand(packages)
 	case "depends":

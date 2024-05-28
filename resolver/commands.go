@@ -2,26 +2,6 @@ package resolver
 
 import "fmt"
 
-func (dr *DependencyResolver) HandleAddCommand(packages []string) {
-	if len(packages) < 6 {
-		fmt.Println("Usage: script add package_name name short_desc long_desc category [requirements...]")
-		return
-	}
-	packageName, name, shortDesc, longDesc, category := packages[0], packages[1], packages[2], packages[3], packages[4]
-	requirements := packages[5:]
-	dr.AddPackageEntry("setup.yml", packageName, name, shortDesc, longDesc, category, requirements)
-}
-
-func (dr *DependencyResolver) HandleUpdateCommand(packages []string) {
-	if len(packages) < 6 {
-		fmt.Println("Usage: script update package_name name short_desc long_desc category [requirements...]")
-		return
-	}
-	packageName, name, shortDesc, longDesc, category := packages[0], packages[1], packages[2], packages[3], packages[4]
-	requirements := packages[5:]
-	dr.UpdatePackageEntry("setup.yml", packageName, name, shortDesc, longDesc, category, requirements)
-}
-
 func (dr *DependencyResolver) HandleShowCommand(packages []string) {
 	for _, pkg := range packages {
 		dr.ShowPackageEntry(pkg)

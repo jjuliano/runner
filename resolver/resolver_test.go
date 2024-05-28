@@ -44,38 +44,6 @@ func setupTestResolver() *DependencyResolver {
 	return resolver
 }
 
-func TestAddPackageEntry(t *testing.T) {
-	resolver := setupTestResolver()
-
-	resolver.AddPackageEntry("", "alpha", "Alpha", "Short description of Alpha", "Long description of Alpha", "example", []string{"a"})
-
-	found := false
-	for _, entry := range resolver.Packages {
-		if entry.Package == "alpha" {
-			found = true
-			if entry.Name != "Alpha" {
-				t.Errorf("Expected name 'Alpha', got %s", entry.Name)
-			}
-			if entry.Sdesc != "Short description of Alpha" {
-				t.Errorf("Expected short description 'Short description of Alpha', got %s", entry.Sdesc)
-			}
-			if entry.Ldesc != "Long description of Alpha" {
-				t.Errorf("Expected long description 'Long description of Alpha', got %s", entry.Ldesc)
-			}
-			if entry.Category != "example" {
-				t.Errorf("Expected category 'example', got %s", entry.Category)
-			}
-			if len(entry.Requires) != 1 || entry.Requires[0] != "a" {
-				t.Errorf("Expected requirements ['a'], got %v", entry.Requires)
-			}
-		}
-	}
-
-	if !found {
-		t.Error("Package 'alpha' not added")
-	}
-}
-
 func TestShowPackageEntry(t *testing.T) {
 	resolver := setupTestResolver()
 
