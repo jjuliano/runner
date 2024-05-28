@@ -76,57 +76,48 @@ jobs:
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
           tag_name: ${{ env.COMMIT_HASH }}
           release_name: DEV Release ${{ env.COMMIT_HASH }}
           body: ${{ env.COMMIT_MESSAGE }}
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Upload release artifact (Linux)
         id: upload-release-asset-linux
         uses: actions/upload-release-asset@v1
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_amd64.tar.gz
           asset_name: ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_amd64.tar.gz
           asset_content_type: application/gzip
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Upload release artifact (macOS)
         id: upload-release-asset-macOS
         uses: actions/upload-release-asset@v1
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_darwin_amd64.tar.gz
           asset_name: ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_darwin_amd64.tar.gz
           asset_content_type: application/gzip
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Upload release artifact (Windows)
         id: upload-release-asset-windows
         uses: actions/upload-release-asset@v1
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_amd64.zip
           asset_name: ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_amd64.zip
           asset_content_type: application/zip
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Upload release artifact (ARM)
         id: upload-release-asset-arm
         uses: actions/upload-release-asset@v1
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_arm.tar.gz
           asset_name: ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_arm.tar.gz
           asset_content_type: application/gzip
+          token: ${{ secrets.PAT_TOKEN }}
