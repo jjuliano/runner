@@ -7,7 +7,13 @@ import (
 	"kdeps/resolver"
 
 	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+)
+
+var (
+	command  string
+	packages []string
 )
 
 func initConfig() {
@@ -25,46 +31,72 @@ func initConfig() {
 func main() {
 	initConfig() // Load configuration at the start
 
-	var command string
-	var packages []string
-
-	for _, arg := range os.Args[1:] {
-		switch arg {
-		case "depends", "rdepends", "add", "update", "search", "category", "show", "tree", "tree-list":
-			if command == "" {
-				command = arg
-			} else {
-				packages = append(packages, arg)
-			}
-		default:
-			packages = append(packages, arg)
-		}
-	}
-
-	if command == "" {
-		fmt.Println("Usage: kdeps [depends|rdepends|search|category|show|tree|tree-list] [package_names...]")
-		return
+	rootCmd := &cobra.Command{
+		Use:   "kdeps",
+		Short: "A package dependency resolver",
 	}
 
 	resolver := resolver.NewDependencyResolver(afero.NewOsFs())
 	resolver.LoadPackageEntries(viper.GetString("package_file")) // Use Viper to get the package file path
 
-	switch command {
-	case "show":
-		resolver.HandleShowCommand(packages)
-	case "depends":
-		resolver.HandleDependsCommand(packages)
-	case "rdepends":
-		resolver.HandleRDependsCommand(packages)
-	case "search":
-		resolver.HandleSearchCommand(packages)
-	case "category":
-		resolver.HandleCategoryCommand(packages)
-	case "tree":
-		resolver.HandleTreeCommand(packages)
-	case "tree-list":
-		resolver.HandleTreeListCommand(packages)
-	default:
-		fmt.Println("Invalid command:", command)
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "depends [package_names...]",
+		Short: "List dependencies of the given packages",
+		Run: func(cmd *cobra.Command, args []string) {
+			resolver.HandleDependsCommand(args)
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "rdepends [package_names...]",
+		Short: "List reverse dependencies of the given packages",
+		Run: func(cmd *cobra.Command, args []string) {
+			resolver.HandleRDependsCommand(args)
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "show [package_names...]",
+		Short: "Show details of the given packages",
+		Run: func(cmd *cobra.Command, args []string) {
+			resolver.HandleShowCommand(args)
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "search [package_names...]",
+		Short: "Search for the given packages",
+		Run: func(cmd *cobra.Command, args []string) {
+			resolver.HandleSearchCommand(args)
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "category [package_names...]",
+		Short: "List categories of the given packages",
+		Run: func(cmd *cobra.Command, args []string) {
+			resolver.HandleCategoryCommand(args)
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "tree [package_names...]",
+		Short: "Show dependency tree of the given packages",
+		Run: func(cmd *cobra.Command, args []string) {
+			resolver.HandleTreeCommand(args)
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "tree-list [package_names...]",
+		Short: "Show dependency tree list of the given packages",
+		Run: func(cmd *cobra.Command, args []string) {
+			resolver.HandleTreeListCommand(args)
+		},
+	})
+
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
