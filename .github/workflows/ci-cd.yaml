@@ -50,22 +50,22 @@ jobs:
 
       - name: Package binary for Linux
         run: |
-          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_amd64.tar.gz -C ./build/${{ env.PROJECT_NAME }}_linux_amd64 ./build/${{ env.PROJECT_NAME }}_linux_amd64/kdeps
+          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_amd64.tar.gz -C ./build/${{ env.PROJECT_NAME }}_linux_amd64 ./${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for macOS
         run: |
-          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_darwin_amd64.tar.gz -C ./build/${{ env.PROJECT_NAME }}_darwin_amd64 ./build/${{ env.PROJECT_NAME }}_darwin_amd64/kdeps
+          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_darwin_amd64.tar.gz -C ./build/${{ env.PROJECT_NAME }}_darwin_amd64 ./${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for Windows
         run: |
-          zip -r ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_amd64.zip -C ./build/${{ env.PROJECT_NAME }}_windows_amd64 ./build/${{ env.PROJECT_NAME }}_windows_amd64/kdeps.exe
+          zip -r ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_amd64.zip -C ./build/${{ env.PROJECT_NAME }}_windows_amd64 ./${{ env.PROJECT_NAME }}.exe
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for ARM
         run: |
-          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_arm.tar.gz -C ./build/${{ env.PROJECT_NAME }}_linux_arm ./build/${{ env.PROJECT_NAME }}_linux_arm/kdeps
+          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_arm.tar.gz -C ./build/${{ env.PROJECT_NAME }}_linux_arm ./${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Create release
