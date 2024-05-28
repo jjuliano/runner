@@ -36,22 +36,22 @@ jobs:
 
       - name: Package binary for Linux
         run: |
-          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_amd64.tar.gz $(PROJECT_NAME)_linux_amd64
+          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_amd64.tar.gz ./build/$(PROJECT_NAME)_linux_amd64
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for macOS
         run: |
-          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_darwin_amd64.tar.gz $(PROJECT_NAME)_darwin_amd64
+          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_darwin_amd64.tar.gz ./build/$(PROJECT_NAME)_darwin_amd64
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for Windows
         run: |
-          zip -r $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_windows_amd64.zip $(PROJECT_NAME)_windows_amd64.exe
+          zip -r $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_windows_amd64.zip ./build/$(PROJECT_NAME)_windows_amd64.exe
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for ARM
         run: |
-          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_arm.tar.gz $(PROJECT_NAME)_linux_arm
+          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_arm.tar.gz ./build/$(PROJECT_NAME)_linux_arm
         working-directory: ${{ github.workspace }}
 
       - name: Create release
