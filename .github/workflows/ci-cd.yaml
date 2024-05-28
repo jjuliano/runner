@@ -50,34 +50,22 @@ jobs:
 
       - name: Package binary for Linux
         run: |
-          tar -czvf $PROJECT_NAME_${{ env.COMMIT_HASH }}_linux_amd64.tar.gz ./build/$PROJECT_NAME_linux_amd64/
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
+          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_amd64.tar.gz ./build/${{ env.PROJECT_NAME }}_linux_amd64/kdeps
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for macOS
         run: |
-          tar -czvf $PROJECT_NAME_${{ env.COMMIT_HASH }}_darwin_amd64.tar.gz ./build/$PROJECT_NAME_darwin_amd64/
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
+          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_darwin_amd64.tar.gz ./build/${{ env.PROJECT_NAME }}_darwin_amd64/kdeps
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for Windows
         run: |
-          zip -r $PROJECT_NAME_${{ env.COMMIT_HASH }}_windows_amd64.zip ./build/$PROJECT_NAME_windows_amd64/
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
+          zip -r ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_amd64.zip ./build/${{ env.PROJECT_NAME }}_windows_amd64/kdeps.exe
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for ARM
         run: |
-          tar -czvf $PROJECT_NAME_${{ env.COMMIT_HASH }}_linux_arm.tar.gz ./build/$PROJECT_NAME_linux_arm/
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
+          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_arm.tar.gz ./build/${{ env.PROJECT_NAME }}_linux_arm/kdeps
         working-directory: ${{ github.workspace }}
 
       - name: Create release
@@ -85,7 +73,7 @@ jobs:
         uses: actions/create-release@v1
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure the token is passed here
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
           tag_name: ${{ env.COMMIT_HASH }}
