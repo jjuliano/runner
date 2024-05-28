@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	"github.com/spf13/afero"
 )
 
 // MockShowPackageEntry is a mock function to replace ShowPackageEntry for testing purposes.
@@ -21,7 +22,7 @@ func (dr *DependencyResolver) MockShowPackageEntry(pkg string) string {
 
 // TestDependencyResolver_FuzzySearch tests the FuzzySearch method.
 func TestDependencyResolver_FuzzySearch(t *testing.T) {
-	resolver := NewDependencyResolver()
+	resolver := NewDependencyResolver(afero.NewMemMapFs())
 	resolver.Packages = []PackageEntry{
 		{Package: "a", Name: "A", Sdesc: "Package A", Ldesc: "The first package in the alphabetical order", Category: "example"},
 		{Package: "b", Name: "B", Sdesc: "Package B", Ldesc: "The second package, dependent on A", Category: "example"},

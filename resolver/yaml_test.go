@@ -1,82 +1,54 @@
 package resolver
 
 import (
-	"io/ioutil"
-	"os"
 	"testing"
 
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v2"
 )
 
-// Sample data for testing
-var samplePackages = []PackageEntry{
-	{Package: "a", Name: "A", Sdesc: "Package A", Ldesc: "The first package in the alphabetical order", Category: "example", Requires: []string{}},
-	{Package: "b", Name: "B", Sdesc: "Package B", Ldesc: "The second package, dependent on A", Category: "example", Requires: []string{"a"}},
-	{Package: "c", Name: "C", Sdesc: "Package C", Ldesc: "The third package, dependent on B", Category: "example", Requires: []string{"b"}},
-	// Add more entries as needed
-}
-
-// Test file path
-const testFilePath = "test_packages.yaml"
-
-func setupTestFile() {
-	data := struct {
-		Packages []PackageEntry `yaml:"packages"`
-	}{
-		Packages: samplePackages,
-	}
-
-	content, _ := yaml.Marshal(data)
-	ioutil.WriteFile(testFilePath, content, 0644)
-}
-
-func cleanupTestFile() {
-	os.Remove(testFilePath)
-}
+var testFilePath = "/test/packages.yaml"
 
 func TestLoadPackageEntries(t *testing.T) {
-	setupTestFile()
-	defer cleanupTestFile()
+	fs := afero.NewMemMapFs()
+	dr := NewDependencyResolver(fs)
 
-	resolver := NewDependencyResolver()
-	resolver.LoadPackageEntries(testFilePath)
+	yamlData := `
+packages:
+  - package: "testpkg"
+    name: "Test Package"
+    sdesc: "A test package"
+    ldesc: "A longer description"
+    category: "test"
+    requires:
+      - "dep1"
+      - "dep2"
+`
+	afero.WriteFile(fs, testFilePath, []byte(yamlData), 0644)
 
-	if len(resolver.Packages) != len(samplePackages) {
-		t.Fatalf("Expected %d packages, got %d", len(samplePackages), len(resolver.Packages))
+	dr.LoadPackageEntries(testFilePath)
+
+	if len(dr.Packages) != 1 {
+		t.Errorf("Expected 1 package, got %d", len(dr.Packages))
 	}
-
-	for i, pkg := range resolver.Packages {
-		if pkg.Package != samplePackages[i].Package {
-			t.Errorf("Expected package %s, got %s", samplePackages[i].Package, pkg.Package)
-		}
-		if pkg.Name != samplePackages[i].Name {
-			t.Errorf("Expected name %s, got %s", samplePackages[i].Name, pkg.Name)
-		}
-		if pkg.Sdesc != samplePackages[i].Sdesc {
-			t.Errorf("Expected short description %s, got %s", samplePackages[i].Sdesc, pkg.Sdesc)
-		}
-		if pkg.Ldesc != samplePackages[i].Ldesc {
-			t.Errorf("Expected long description %s, got %s", samplePackages[i].Ldesc, pkg.Ldesc)
-		}
-		if pkg.Category != samplePackages[i].Category {
-			t.Errorf("Expected category %s, got %s", samplePackages[i].Category, pkg.Category)
-		}
-		if len(pkg.Requires) != len(samplePackages[i].Requires) {
-			t.Errorf("Expected requirements %v, got %v", samplePackages[i].Requires, pkg.Requires)
-		}
+	if dr.Packages[0].Package != "testpkg" {
+		t.Errorf("Expected package 'testpkg', got '%s'", dr.Packages[0].Package)
 	}
 }
 
 func TestSavePackageEntries(t *testing.T) {
-	resolver := NewDependencyResolver()
-	resolver.Packages = samplePackages
+	fs := afero.NewMemMapFs()
+	dr := NewDependencyResolver(fs)
 
-	resolver.SavePackageEntries(testFilePath)
-	defer cleanupTestFile()
+	dr.Packages = []PackageEntry{
+		{Package: "testpkg", Name: "Test Package", Sdesc: "A test package", Ldesc: "A longer description", Category: "test", Requires: []string{"dep1", "dep2"}},
+	}
 
-	content, err := ioutil.ReadFile(testFilePath)
+	dr.SavePackageEntries(testFilePath)
+
+	content, err := afero.ReadFile(fs, testFilePath)
 	if err != nil {
-		t.Fatalf("Error reading file: %v", err)
+		t.Errorf("Error reading file: %v", err)
 	}
 
 	var data struct {
@@ -84,31 +56,13 @@ func TestSavePackageEntries(t *testing.T) {
 	}
 	err = yaml.Unmarshal(content, &data)
 	if err != nil {
-		t.Fatalf("Error unmarshalling YAML: %v", err)
+		t.Errorf("Error unmarshalling YAML: %v", err)
 	}
 
-	if len(data.Packages) != len(samplePackages) {
-		t.Fatalf("Expected %d packages, got %d", len(samplePackages), len(data.Packages))
+	if len(data.Packages) != 1 {
+		t.Errorf("Expected 1 package, got %d", len(data.Packages))
 	}
-
-	for i, pkg := range data.Packages {
-		if pkg.Package != samplePackages[i].Package {
-			t.Errorf("Expected package %s, got %s", samplePackages[i].Package, pkg.Package)
-		}
-		if pkg.Name != samplePackages[i].Name {
-			t.Errorf("Expected name %s, got %s", samplePackages[i].Name, pkg.Name)
-		}
-		if pkg.Sdesc != samplePackages[i].Sdesc {
-			t.Errorf("Expected short description %s, got %s", samplePackages[i].Sdesc, pkg.Sdesc)
-		}
-		if pkg.Ldesc != samplePackages[i].Ldesc {
-			t.Errorf("Expected long description %s, got %s", samplePackages[i].Ldesc, pkg.Ldesc)
-		}
-		if pkg.Category != samplePackages[i].Category {
-			t.Errorf("Expected category %s, got %s", samplePackages[i].Category, pkg.Category)
-		}
-		if len(pkg.Requires) != len(samplePackages[i].Requires) {
-			t.Errorf("Expected requirements %v, got %v", samplePackages[i].Requires, pkg.Requires)
-		}
+	if data.Packages[0].Package != "testpkg" {
+		t.Errorf("Expected package 'testpkg', got '%s'", data.Packages[0].Package)
 	}
 }

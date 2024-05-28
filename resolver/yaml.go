@@ -2,13 +2,13 @@ package resolver
 
 import (
 	"fmt"
-	"io/ioutil"
 
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v2"
 )
 
-func (dr *DependencyResolver) LoadPackageEntries(file string) {
-	content, err := ioutil.ReadFile(file)
+func (dr *DependencyResolver) LoadPackageEntries(filePath string) {
+	content, err := afero.ReadFile(dr.Fs, filePath)
 	if err != nil {
 		fmt.Println("Error reading file:", err)
 		return
@@ -17,7 +17,6 @@ func (dr *DependencyResolver) LoadPackageEntries(file string) {
 	var data struct {
 		Packages []PackageEntry `yaml:"packages"`
 	}
-
 	err = yaml.Unmarshal(content, &data)
 	if err != nil {
 		fmt.Println("Error unmarshalling YAML:", err)
@@ -25,12 +24,12 @@ func (dr *DependencyResolver) LoadPackageEntries(file string) {
 	}
 
 	dr.Packages = data.Packages
-	for _, entry := range dr.Packages {
-		dr.packageDependencies[entry.Package] = entry.Requires
+	for _, pkg := range dr.Packages {
+		dr.packageDependencies[pkg.Package] = pkg.Requires
 	}
 }
 
-func (dr *DependencyResolver) SavePackageEntries(file string) {
+func (dr *DependencyResolver) SavePackageEntries(filePath string) {
 	data := struct {
 		Packages []PackageEntry `yaml:"packages"`
 	}{
@@ -43,7 +42,7 @@ func (dr *DependencyResolver) SavePackageEntries(file string) {
 		return
 	}
 
-	err = ioutil.WriteFile(file, content, 0644)
+	err = afero.WriteFile(dr.Fs, filePath, content, 0644)
 	if err != nil {
 		fmt.Println("Error writing file:", err)
 	}

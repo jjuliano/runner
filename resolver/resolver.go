@@ -2,9 +2,12 @@ package resolver
 
 import (
 	"fmt"
+
+	"github.com/spf13/afero"
 )
 
 type DependencyResolver struct {
+	Fs                  afero.Fs
 	Packages            []PackageEntry
 	packageDependencies map[string][]string
 	dependencyGraph     []string
@@ -20,22 +23,21 @@ type PackageEntry struct {
 	Requires []string `yaml:"requires"`
 }
 
-func NewDependencyResolver() *DependencyResolver {
+func NewDependencyResolver(fs afero.Fs) *DependencyResolver {
 	return &DependencyResolver{
-		Packages:            []PackageEntry{},
+		Fs:                  fs,
 		packageDependencies: make(map[string][]string),
-		dependencyGraph:     []string{},
 		visitedPaths:        make(map[string]bool),
 	}
 }
 
-func (dr *DependencyResolver) ShowPackageEntry(packageName string) {
+func (dr *DependencyResolver) ShowPackageEntry(pkg string) {
 	for _, entry := range dr.Packages {
-		if entry.Package == packageName {
-			fmt.Printf("Package: %s\nName: %s\nShort Description: %s\nLong Description: %s\nCategory: %s\nRequirements: %s\n",
+		if entry.Package == pkg {
+			fmt.Printf("Package: %s\nName: %s\nShort Description: %s\nLong Description: %s\nCategory: %s\nRequirements: %v\n",
 				entry.Package, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
 			return
 		}
 	}
-	fmt.Printf("Package %s not found.\n", packageName)
+	fmt.Printf("Package %s not found\n", pkg)
 }

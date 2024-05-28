@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
-	"kdeps/resolver"
 	"os"
+
+	"kdeps/resolver"
+
+	"github.com/spf13/afero"
 )
 
 func main() {
@@ -28,7 +31,7 @@ func main() {
 		return
 	}
 
-	resolver := resolver.NewDependencyResolver()
+	resolver := resolver.NewDependencyResolver(afero.NewOsFs())
 	resolver.LoadPackageEntries("setup.yml")
 
 	switch command {

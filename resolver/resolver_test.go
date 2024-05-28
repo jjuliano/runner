@@ -5,11 +5,14 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 // Helper function to initialize a DependencyResolver with sample data.
 func setupTestResolver() *DependencyResolver {
-	resolver := NewDependencyResolver()
+	fs := afero.NewMemMapFs() // Using an in-memory filesystem for testing
+	resolver := NewDependencyResolver(fs)
 	resolver.Packages = []PackageEntry{
 		{Package: "a", Name: "A", Sdesc: "Package A", Ldesc: "The first package in the alphabetical order", Category: "example", Requires: []string{}},
 		{Package: "b", Name: "B", Sdesc: "Package B", Ldesc: "The second package, dependent on A", Category: "example", Requires: []string{"a"}},
