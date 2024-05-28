@@ -7,9 +7,24 @@ import (
 	"kdeps/resolver"
 
 	"github.com/spf13/afero"
+	"github.com/spf13/viper"
 )
 
+func initConfig() {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	viper.AutomaticEnv() // read in environment variables that match
+
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("Error reading config file: %s\n", err)
+		os.Exit(1)
+	}
+}
+
 func main() {
+	initConfig() // Load configuration at the start
+
 	var command string
 	var packages []string
 
@@ -32,7 +47,7 @@ func main() {
 	}
 
 	resolver := resolver.NewDependencyResolver(afero.NewOsFs())
-	resolver.LoadPackageEntries("setup.yml")
+	resolver.LoadPackageEntries(viper.GetString("package_file")) // Use Viper to get the package file path
 
 	switch command {
 	case "show":
