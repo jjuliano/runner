@@ -1,0 +1,111 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - name: Run tests
+        run: make test
+
+      - name: Build for Linux
+        run: make linux
+
+      - name: Build for macOS
+        run: make darwin
+
+      - name: Build for Windows
+        run: make windows
+
+      - name: Build for ARM
+        run: make arm
+
+      - name: Package binary for Linux
+        run: |
+          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_amd64.tar.gz $(PROJECT_NAME)_linux_amd64
+        working-directory: ${{ github.workspace }}
+
+      - name: Package binary for macOS
+        run: |
+          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_darwin_amd64.tar.gz $(PROJECT_NAME)_darwin_amd64
+        working-directory: ${{ github.workspace }}
+
+      - name: Package binary for Windows
+        run: |
+          zip -r $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_windows_amd64.zip $(PROJECT_NAME)_windows_amd64.exe
+        working-directory: ${{ github.workspace }}
+
+      - name: Package binary for ARM
+        run: |
+          tar -czvf $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_arm.tar.gz $(PROJECT_NAME)_linux_arm
+        working-directory: ${{ github.workspace }}
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.new_tag }}
+          release_name: Release ${{ steps.version.outputs.new_tag }}
+          body: |
+            Changes in this release:
+            - Describe your changes here
+
+      - name: Upload release artifact (Linux)
+        id: upload-release-asset-linux
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./$(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_amd64.tar.gz
+          asset_name: $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_amd64.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload release artifact (macOS)
+        id: upload-release-asset-macOS
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./$(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_darwin_amd64.tar.gz
+          asset_name: $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_darwin_amd64.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload release artifact (Windows)
+        id: upload-release-asset-windows
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./$(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_windows_amd64.zip
+          asset_name: $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_windows_amd64.zip
+          asset_content_type: application/zip
+
+      - name: Upload release artifact (ARM)
+        id: upload-release-asset-arm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./$(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_arm.tar.gz
+          asset_name: $(PROJECT_NAME)_${{ steps.version.outputs.new_tag }}_linux_arm.tar.gz
+          asset_content_type: application/gzip
