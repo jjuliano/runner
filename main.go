@@ -6,6 +6,7 @@ import (
 
 	"kdeps/resolver"
 
+	"github.com/charmbracelet/log"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -29,6 +30,9 @@ func initConfig() {
 }
 
 func main() {
+	logger := log.Default()
+	logger.Helper()
+
 	initConfig() // Load configuration at the start
 
 	rootCmd := &cobra.Command{
@@ -36,7 +40,7 @@ func main() {
 		Short: "A package dependency resolver",
 	}
 
-	resolver := resolver.NewDependencyResolver(afero.NewOsFs())
+	resolver := resolver.NewDependencyResolver(afero.NewOsFs(), logger)
 
 	packageFiles := viper.GetStringSlice("package_files")
 	for _, file := range packageFiles {
@@ -104,6 +108,14 @@ func main() {
 		Short: "List all package entries",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleIndexCommand()
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "run [package_names...]",
+		Short: "Run the commands for the given packages",
+		Run: func(cmd *cobra.Command, args []string) {
+			resolver.HandleRunCommand(args)
 		},
 	})
 

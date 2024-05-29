@@ -3,6 +3,10 @@ The missing package manager for Kubernetes
 
 ## Features
 
+- Eliminates Kubernetes GLUE code
+- Automatically resolve dependencies (services, configs or packages)
+- Check if service is running, build, install and check if not
+
 - **Dependency Resolution:** List dependencies of a package and its reverse dependencies.
 - **Package Information:** Show detailed information about a package.
 - **Package Search:** Search for packages based on keywords.
