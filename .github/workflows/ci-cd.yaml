@@ -25,17 +25,13 @@ jobs:
         with:
           go-version: 1.22
 
-      - name: Get last release tag
-        id: last_release
-        run: echo "::set-output name=tag::$(git describe --tags --abbrev=0)"
-
-      - name: Get commit messages since last release
-        id: get_commit_messages
-        run: echo "::set-output name=commits::$(git log --pretty=format:'%s' ${{ steps.last_release.outputs.tag }}..HEAD)"
-
       - name: Get commit hash
         id: get_commit_hash
         run: echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Get commit messages since last release
+        id: get_commit_messages
+        run: echo "::set-output name=commits::$(git log --pretty=format:'%s' ${{ steps.get_commit_hash.outputs.hash }}..HEAD)"
 
       - name: Run tests
         run: make test
