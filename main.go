@@ -37,7 +37,11 @@ func main() {
 	}
 
 	resolver := resolver.NewDependencyResolver(afero.NewOsFs())
-	resolver.LoadPackageEntries(viper.GetString("package_file")) // Use Viper to get the package file path
+
+	packageFiles := viper.GetStringSlice("package_files")
+	for _, file := range packageFiles {
+		resolver.LoadPackageEntries(file) // Load package entries from each file
+	}
 
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "depends [package_names...]",

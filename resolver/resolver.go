@@ -1,8 +1,6 @@
 package resolver
 
 import (
-	"fmt"
-
 	"github.com/spf13/afero"
 )
 
@@ -29,15 +27,4 @@ func NewDependencyResolver(fs afero.Fs) *DependencyResolver {
 		packageDependencies: make(map[string][]string),
 		visitedPaths:        make(map[string]bool),
 	}
-}
-
-func (dr *DependencyResolver) ShowPackageEntry(pkg string) {
-	for _, entry := range dr.Packages {
-		if entry.Package == pkg {
-			fmt.Printf("Package: %s\nName: %s\nShort Description: %s\nLong Description: %s\nCategory: %s\nRequirements: %v\n",
-				entry.Package, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
-			return
-		}
-	}
-	fmt.Printf("Package %s not found\n", pkg)
 }

@@ -1,2 +1,4 @@
-package_file: "setup.yml"
+package_files:
+  - config.yaml
+  - system.yaml
 

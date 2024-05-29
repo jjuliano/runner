@@ -8,25 +8,36 @@ import (
 )
 
 func (dr *DependencyResolver) LoadPackageEntries(filePath string) {
-	content, err := afero.ReadFile(dr.Fs, filePath)
+	data, err := afero.ReadFile(dr.Fs, filePath)
 	if err != nil {
-		fmt.Println("Error reading file:", err)
+		fmt.Printf("Error reading file %s: %v\n", filePath, err)
 		return
 	}
 
-	var data struct {
+	var filePackages struct {
 		Packages []PackageEntry `yaml:"packages"`
 	}
-	err = yaml.Unmarshal(content, &data)
-	if err != nil {
-		fmt.Println("Error unmarshalling YAML:", err)
+
+	if err := yaml.Unmarshal(data, &filePackages); err != nil {
+		fmt.Printf("Error unmarshalling YAML data from file %s: %v\n", filePath, err)
 		return
 	}
 
-	dr.Packages = data.Packages
-	for _, pkg := range dr.Packages {
-		dr.packageDependencies[pkg.Package] = pkg.Requires
+	dr.Packages = append(dr.Packages, filePackages.Packages...)
+	for _, entry := range filePackages.Packages {
+		dr.packageDependencies[entry.Package] = entry.Requires
 	}
+}
+
+func (dr *DependencyResolver) ShowPackageEntry(pkg string) {
+	for _, entry := range dr.Packages {
+		if entry.Package == pkg {
+			fmt.Printf("Package: %s\nName: %s\nShort Description: %s\nLong Description: %s\nCategory: %s\nRequirements: %v\n",
+				entry.Package, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
+			return
+		}
+	}
+	fmt.Printf("Package %s not found\n", pkg)
 }
 
 func (dr *DependencyResolver) SavePackageEntries(filePath string) {
