@@ -99,6 +99,14 @@ func main() {
 		},
 	})
 
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "index",
+		Short: "List all package entries",
+		Run: func(cmd *cobra.Command, args []string) {
+			resolver.HandleIndexCommand()
+		},
+	})
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

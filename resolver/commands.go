@@ -51,3 +51,11 @@ func (dr *DependencyResolver) HandleTreeListCommand(packages []string) {
 		dr.ListDependencyTreeTopDown(pkg)
 	}
 }
+
+func (dr *DependencyResolver) HandleIndexCommand() {
+	for _, entry := range dr.Packages {
+		fmt.Printf("Package: %s\nName: %s\nShort Description: %s\nLong Description: %s\nCategory: %s\nRequirements: %v\n",
+			entry.Package, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
+		fmt.Println("---")
+	}
+}
