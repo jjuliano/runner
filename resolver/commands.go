@@ -21,10 +21,6 @@ func (dr *DependencyResolver) HandleRDependsCommand(packages []string) {
 }
 
 func (dr *DependencyResolver) HandleSearchCommand(packages []string) {
-	if len(packages) < 2 {
-		fmt.Println("Usage: script search query [keys...]")
-		return
-	}
 	query := packages[0]
 	keys := packages[1:]
 	dr.FuzzySearch(query, keys)

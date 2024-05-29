@@ -8,6 +8,11 @@ import (
 )
 
 func (dr *DependencyResolver) FuzzySearch(query string, keys []string) {
+	if len(keys) == 0 {
+		// If no keys are provided, search in all fields
+		keys = []string{"package", "name", "sdesc", "ldesc", "category"}
+	}
+
 	combinedEntries := make([][2]string, len(dr.Packages))
 	for i, entry := range dr.Packages {
 		var combined strings.Builder
