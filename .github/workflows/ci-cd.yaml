@@ -79,7 +79,7 @@ jobs:
           COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
           tag_name: ${{ env.COMMIT_HASH }}
-          release_name: DEV Release ${{ steps.get_commit_hash.outputs.hash }}
+          release_name: DEV Release ${{ env.COMMIT_HASH }}
           body: ${{ steps.get_commit_messages.outputs.commits }}
 
       - name: Upload release artifact (Linux)
