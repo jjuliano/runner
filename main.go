@@ -17,7 +17,7 @@ var (
 )
 
 func initConfig() {
-	viper.SetConfigName("config")
+	viper.SetConfigName("kdeps")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv() // read in environment variables that match

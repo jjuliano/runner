@@ -28,7 +28,7 @@ func (dr *DependencyResolver) HandleSearchCommand(packages []string) {
 
 func (dr *DependencyResolver) HandleCategoryCommand(packages []string) {
 	if len(packages) == 0 {
-		fmt.Println("Usage: script category [categories...]")
+		fmt.Println("Usage: kdeps category [categories...]")
 		return
 	}
 	for _, entry := range dr.Packages {
