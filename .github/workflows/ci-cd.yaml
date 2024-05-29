@@ -31,7 +31,9 @@ jobs:
 
       - name: Get commit messages since last release
         id: get_commit_messages
-        run: echo "::set-output name=commits::$(git log --pretty=format:'%s' ${{ steps.get_commit_hash.outputs.hash }}..HEAD)"
+        run: echo "::set-output name=commits::$(git log --pretty=format:'%s' ${{ env.COMMIT_HASH }}..HEAD)"
+        env:
+          COMMIT_HASH: ${{ env.COMMIT_HASH }}
 
       - name: Run tests
         run: make test
@@ -76,6 +78,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
+          tag_name: ${{ env.COMMIT_HASH }}
           release_name: DEV Release ${{ steps.get_commit_hash.outputs.hash }}
           body: ${{ steps.get_commit_messages.outputs.commits }}
 
