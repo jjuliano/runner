@@ -25,9 +25,13 @@ jobs:
         with:
           go-version: 1.22
 
-      - name: Get commit message
-        id: get_commit_message
-        run: echo "COMMIT_MESSAGE=$(git log -1 --pretty=format:'%s')" >> $GITHUB_ENV
+      - name: Get last release tag
+        id: last_release
+        run: echo "::set-output name=tag::$(git describe --tags --abbrev=0)"
+
+      - name: Get commit messages since last release
+        id: get_commit_messages
+        run: echo "::set-output name=commits::$(git log --pretty=format:'%s' ${{ steps.last_release.outputs.tag }}..HEAD)"
 
       - name: Get commit hash
         id: get_commit_hash
@@ -76,9 +80,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
-          tag_name: ${{ env.COMMIT_HASH }}
-          release_name: DEV Release ${{ env.COMMIT_HASH }}
-          body: ${{ env.COMMIT_MESSAGE }}
+          tag_name: ${{ steps.get_commit_hash.outputs.hash }}
+          release_name: DEV Release ${{ steps.get_commit_hash.outputs.hash }}
+          body: ${{ steps.get_commit_messages.outputs.commits }}
 
       - name: Upload release artifact (Linux)
         id: upload-release-asset-linux
