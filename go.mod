@@ -1,21 +1,20 @@
 module kdeps
 
-go 1.22
+go 1.22.3
 
 require (
+	github.com/charmbracelet/log v0.4.0
+	github.com/kdeps/kartographer v0.0.0-20240530131048-c0dd08f55be3
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
-	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/lipgloss v0.10.0 // indirect
-	github.com/charmbracelet/log v0.4.0 // indirect
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -28,7 +27,6 @@ require (
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect

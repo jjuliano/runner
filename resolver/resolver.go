@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"github.com/charmbracelet/log"
+	graph "github.com/kdeps/kartographer/graph"
 	"github.com/spf13/afero"
 )
 
@@ -12,6 +13,7 @@ type DependencyResolver struct {
 	dependencyGraph     []string
 	visitedPaths        map[string]bool
 	logger              *log.Logger
+	Graph               *graph.DependencyGraph
 }
 
 type RunStep struct {
@@ -31,10 +33,12 @@ type PackageEntry struct {
 }
 
 func NewDependencyResolver(fs afero.Fs, logger *log.Logger) *DependencyResolver {
-	return &DependencyResolver{
+	dr := &DependencyResolver{
 		Fs:                  fs,
 		packageDependencies: make(map[string][]string),
 		visitedPaths:        make(map[string]bool),
 		logger:              logger,
 	}
+	dr.Graph = graph.NewDependencyGraph(fs, logger, dr.packageDependencies)
+	return dr
 }

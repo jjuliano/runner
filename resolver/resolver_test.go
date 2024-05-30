@@ -6,13 +6,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/log"
 	"github.com/spf13/afero"
 )
 
 // Helper function to initialize a DependencyResolver with sample data.
 func setupTestResolver() *DependencyResolver {
 	fs := afero.NewMemMapFs() // Using an in-memory filesystem for testing
-	resolver := NewDependencyResolver(fs)
+	logger := log.New(nil)
+	resolver := NewDependencyResolver(fs, logger)
 	resolver.Packages = []PackageEntry{
 		{Package: "a", Name: "A", Sdesc: "Package A", Ldesc: "The first package in the alphabetical order", Category: "example", Requires: []string{}},
 		{Package: "b", Name: "B", Sdesc: "Package B", Ldesc: "The second package, dependent on A", Category: "example", Requires: []string{"a"}},
@@ -77,38 +79,38 @@ func TestListDirectDependencies(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	resolver.ListDirectDependencies("z")
+	resolver.Graph.ListDirectDependencies("z")
 
 	w.Close()
 	os.Stdout = old
 	io.Copy(&output, r)
 
 	expectedOutput := `z
-z > y
-z > y > x
-z > y > x > w
-z > y > x > w > v
-z > y > x > w > v > u
-z > y > x > w > v > u > t
-z > y > x > w > v > u > t > s
-z > y > x > w > v > u > t > s > r
-z > y > x > w > v > u > t > s > r > q
-z > y > x > w > v > u > t > s > r > q > p
-z > y > x > w > v > u > t > s > r > q > p > o
-z > y > x > w > v > u > t > s > r > q > p > o > n
-z > y > x > w > v > u > t > s > r > q > p > o > n > m
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k > j
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k > j > i
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k > j > i > h
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k > j > i > h > g
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k > j > i > h > g > f
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k > j > i > h > g > f > e
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k > j > i > h > g > f > e > d
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k > j > i > h > g > f > e > d > c
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k > j > i > h > g > f > e > d > c > b
-z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k > j > i > h > g > f > e > d > c > b > a
+z -> y
+z -> y -> x
+z -> y -> x -> w
+z -> y -> x -> w -> v
+z -> y -> x -> w -> v -> u
+z -> y -> x -> w -> v -> u -> t
+z -> y -> x -> w -> v -> u -> t -> s
+z -> y -> x -> w -> v -> u -> t -> s -> r
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l -> k
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l -> k -> j
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l -> k -> j -> i
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l -> k -> j -> i -> h
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l -> k -> j -> i -> h -> g
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l -> k -> j -> i -> h -> g -> f
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l -> k -> j -> i -> h -> g -> f -> e
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l -> k -> j -> i -> h -> g -> f -> e -> d
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l -> k -> j -> i -> h -> g -> f -> e -> d -> c
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l -> k -> j -> i -> h -> g -> f -> e -> d -> c -> b
+z -> y -> x -> w -> v -> u -> t -> s -> r -> q -> p -> o -> n -> m -> l -> k -> j -> i -> h -> g -> f -> e -> d -> c -> b -> a
 `
 	if output.String() != expectedOutput {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output.String())
@@ -124,13 +126,13 @@ func TestListDependencyTree(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	resolver.ListDependencyTree("z")
+	resolver.Graph.ListDependencyTree("z")
 
 	w.Close()
 	os.Stdout = old
 	io.Copy(&output, r)
 
-	expectedOutput := "z > y > x > w > v > u > t > s > r > q > p > o > n > m > l > k > j > i > h > g > f > e > d > c > b > a\n"
+	expectedOutput := "z <- y <- x <- w <- v <- u <- t <- s <- r <- q <- p <- o <- n <- m <- l <- k <- j <- i <- h <- g <- f <- e <- d <- c <- b <- a\n"
 	if output.String() != expectedOutput {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output.String())
 	}
@@ -145,7 +147,7 @@ func TestListDependencyTreeList(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	resolver.ListDependencyTreeTopDown("z")
+	resolver.Graph.ListDependencyTreeTopDown("z")
 
 	w.Close()
 	os.Stdout = old

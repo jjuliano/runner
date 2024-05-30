@@ -6,6 +6,21 @@ The missing package manager for Kubernetes
 - Eliminates Kubernetes GLUE code
 - Automatically resolve dependencies (services, configs or packages)
 - Check if service is running, build, install and check if not
+- Expect
+- NotExpect
+- Env (Array)
+- TargetEnv (Key)
+- Linter to check YAML files
+- If GIT is provided, clone and CD into the repository
+- If Folder is provided, CD into the folder
+- API Calls via
+- GET
+- POST
+- DELETE
+- RegistryImage: ???
+- RegistryURL: ???
+- DockerPods: ???
+- KubePods: ???
 
 - **Dependency Resolution:** List dependencies of a package and its reverse dependencies.
 - **Package Information:** Show detailed information about a package.

@@ -10,6 +10,7 @@ import (
 
 	"kdeps/resolver"
 
+	"github.com/charmbracelet/log"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -54,7 +55,8 @@ func initTestConfig() {
 
 func setupTestResolver() *resolver.DependencyResolver {
 	fs := afero.NewMemMapFs()
-	resolver := resolver.NewDependencyResolver(fs)
+	logger := log.New(nil)
+	resolver := resolver.NewDependencyResolver(fs, logger)
 	yamlData := `
 packages:
   - package: "pkg1"
@@ -103,7 +105,7 @@ func TestDependsCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "pkg1\npkg1 > pkg2\npkg1 > pkg2 > pkg3\n"
+	expectedOutput := "pkg1\npkg1 -> pkg2\npkg1 -> pkg2 -> pkg3\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
@@ -131,7 +133,7 @@ func TestRDependsCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "pkg3\npkg3 > pkg2\npkg3 > pkg2 > pkg1\n"
+	expectedOutput := "pkg3\npkg3 -> pkg2\npkg3 -> pkg2 -> pkg1\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
@@ -243,7 +245,7 @@ func TestTreeCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "pkg1 > pkg2 > pkg3\n"
+	expectedOutput := "pkg1 <- pkg2 <- pkg3\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}

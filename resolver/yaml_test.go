@@ -3,6 +3,7 @@ package resolver
 import (
 	"testing"
 
+	"github.com/charmbracelet/log"
 	"github.com/spf13/afero"
 )
 
@@ -10,7 +11,8 @@ var testFilePaths = []string{"/test/file1.yaml", "/test/file2.yaml"}
 
 func TestLoadPackageEntries(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	dr := NewDependencyResolver(fs)
+	logger := log.New(nil)
+	dr := NewDependencyResolver(fs, logger)
 
 	yamlData1 := `
 packages:

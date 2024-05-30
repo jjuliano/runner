@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/log"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/spf13/afero"
 )
@@ -22,7 +23,8 @@ func (dr *DependencyResolver) MockShowPackageEntry(pkg string) string {
 
 // TestDependencyResolver_FuzzySearch tests the FuzzySearch method.
 func TestDependencyResolver_FuzzySearch(t *testing.T) {
-	resolver := NewDependencyResolver(afero.NewMemMapFs())
+	logger := log.New(nil)
+	resolver := NewDependencyResolver(afero.NewMemMapFs(), logger)
 	resolver.Packages = []PackageEntry{
 		{Package: "a", Name: "A", Sdesc: "Package A", Ldesc: "The first package in the alphabetical order", Category: "example"},
 		{Package: "b", Name: "B", Sdesc: "Package B", Ldesc: "The second package, dependent on A", Category: "example"},

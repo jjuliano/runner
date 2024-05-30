@@ -41,13 +41,12 @@ func executeCommand(execCmd string) (string, error) {
 func formatLogEntry(entry stepLog) string {
 	return strings.Join([]string{
 		"\n----------------------------------------------------------\n",
-		"Package: " + entry.pkg,
-		"Step: " + entry.name,
-		"Command: " + entry.command,
+		"📦 Package: " + entry.pkg,
+		"🔄 Step: " + entry.name,
+		"💻 Command: " + entry.command,
 		"\n" + entry.message,
 		"----------------------------------------------------------",
 	}, "\n")
-
 }
 
 func (dr *DependencyResolver) HandleRunCommand(packages []string) {
@@ -55,7 +54,7 @@ func (dr *DependencyResolver) HandleRunCommand(packages []string) {
 
 	for _, pkgName := range packages {
 		for _, pkg := range dr.Packages {
-			dr.logger.Info(fmt.Sprintf("Resolving dependency %s", pkg.Package))
+			dr.logger.Info(fmt.Sprintf("🔍 Resolving dependency %s", pkg.Package))
 
 			if pkg.Package == pkgName && pkg.Run != nil {
 				for _, step := range pkg.Run {
@@ -67,13 +66,13 @@ func (dr *DependencyResolver) HandleRunCommand(packages []string) {
 						}
 
 						if err != nil {
-							dr.logger.Errorf("Error executing command '%s': %s\n", step.Exec, err)
+							dr.logger.Errorf("❌ Error executing command '%s': %s\n", step.Exec, err)
 							os.Exit(1)
 						}
 
 						if step.Expect != "" {
 							if !strings.Contains(strings.ToLower(output), strings.ToLower(step.Expect)) {
-								dr.logger.Errorf("Expected '%s' not found in output of '%s'\n", step.Expect, step.Exec)
+								dr.logger.Errorf("❌ Expected '%s' not found in output of '%s'\n", step.Expect, step.Exec)
 								os.Exit(1)
 							}
 						}
@@ -84,7 +83,7 @@ func (dr *DependencyResolver) HandleRunCommand(packages []string) {
 			for _, val := range logs.getLogs() {
 				if val.name != "" {
 					formattedLog := formatLogEntry(val)
-					dr.logger.Printf("Running %s... %s", val.name, formattedLog)
+					dr.logger.Printf("🏃 Running %s... %s", val.name, formattedLog)
 				}
 			}
 		}
@@ -99,13 +98,13 @@ func (dr *DependencyResolver) HandleShowCommand(packages []string) {
 
 func (dr *DependencyResolver) HandleDependsCommand(packages []string) {
 	for _, pkg := range packages {
-		dr.ListDirectDependencies(pkg)
+		dr.Graph.ListDirectDependencies(pkg)
 	}
 }
 
 func (dr *DependencyResolver) HandleRDependsCommand(packages []string) {
 	for _, pkg := range packages {
-		dr.ListReverseDependencies(pkg)
+		dr.Graph.ListReverseDependencies(pkg)
 	}
 }
 
@@ -123,7 +122,7 @@ func (dr *DependencyResolver) HandleCategoryCommand(packages []string) {
 	for _, entry := range dr.Packages {
 		for _, category := range packages {
 			if entry.Category == category {
-				fmt.Println(entry.Package)
+				fmt.Println("📂 " + entry.Package)
 			}
 		}
 	}
@@ -131,19 +130,19 @@ func (dr *DependencyResolver) HandleCategoryCommand(packages []string) {
 
 func (dr *DependencyResolver) HandleTreeCommand(packages []string) {
 	for _, pkg := range packages {
-		dr.ListDependencyTree(pkg)
+		dr.Graph.ListDependencyTree(pkg)
 	}
 }
 
 func (dr *DependencyResolver) HandleTreeListCommand(packages []string) {
 	for _, pkg := range packages {
-		dr.ListDependencyTreeTopDown(pkg)
+		dr.Graph.ListDependencyTreeTopDown(pkg)
 	}
 }
 
 func (dr *DependencyResolver) HandleIndexCommand() {
 	for _, entry := range dr.Packages {
-		fmt.Printf("Package: %s\nName: %s\nShort Description: %s\nLong Description: %s\nCategory: %s\nRequirements: %v\n",
+		fmt.Printf("📦 Package: %s\n📛 Name: %s\n📝 Short Description: %s\n📖 Long Description: %s\n🏷️ Category: %s\n🔗 Requirements: %v\n",
 			entry.Package, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
 		fmt.Println("---")
 	}
