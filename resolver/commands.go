@@ -126,7 +126,11 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 						// Handle exec steps
 						for _, step := range res.Run {
 							if step.Exec != "" {
-								output, exitCode, err := exec.ExecuteCommand(step.Exec)
+								resultChan := exec.ExecuteCommand(step.Exec)
+								result := <-resultChan
+								output := result.Output
+								exitCode := result.ExitCode
+								err := result.Err
 
 								if step.Name != "" {
 									logs.addLogs(stepLog{targetRes: resNode, command: step.Exec, res: res.Name, name: step.Name, message: output}, logChan)

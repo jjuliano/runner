@@ -23,8 +23,8 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/kdeps/kartographer v0.0.0-20240531104651-e3e41827da17 h1:GPjoD1qdjWgau4Sf2k5M/aEYL/OTSzBYfQcp2/iQdVg=
 github.com/kdeps/kartographer v0.0.0-20240531104651-e3e41827da17/go.mod h1:DYSCAer2OsX5F3Jne82p4P1LCIu42DQFfL5ypZYcUbk=
-github.com/kdeps/plugins v0.0.0-20240531141928-34feecd7dc15 h1:2POWJiNGr+Yvs355YtGTCiHp5FaMFRsmGOA7jVgEykQ=
-github.com/kdeps/plugins v0.0.0-20240531141928-34feecd7dc15/go.mod h1:5absObWBxeQ7W/XSNQhKya0CZUi5uwCsEiufbCkWFAA=
+github.com/kdeps/plugins v0.0.0-20240531224732-fbc4f57db083 h1:Bfo6BnaHH5oCbfNwlY9tOI/V4+P/uv2HpXLsIL2Y7g0=
+github.com/kdeps/plugins v0.0.0-20240531224732-fbc4f57db083/go.mod h1:5absObWBxeQ7W/XSNQhKya0CZUi5uwCsEiufbCkWFAA=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
 github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3xk=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
