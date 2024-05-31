@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/kdeps/plugins/exec"
@@ -43,6 +44,7 @@ func formatLogEntry(entry stepLog) string {
 func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 	logs := new(logs)
 	visited := make(map[string]bool)
+	client := &http.Client{}
 
 	for _, resName := range resources {
 		stack := dr.Graph.BuildDependencyStack(resName, visited)
@@ -67,7 +69,7 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 
 								if step.Expect != nil {
 									expectations := expect.ProcessExpectations(step.Expect)
-									if err := expect.CheckExpectations(output, exitCode, expectations); err != nil {
+									if err := expect.CheckExpectations(output, exitCode, expectations, client); err != nil {
 										return LogError("Expectation check failed for command '"+step.Exec+"'", err)
 									}
 								}
