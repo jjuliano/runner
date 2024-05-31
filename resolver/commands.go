@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -42,6 +43,52 @@ func formatLogEntry(entry stepLog) string {
 	}, "\n")
 }
 
+func (dr *DependencyResolver) processCheckSteps(initSteps []interface{}, client *http.Client) error {
+	for _, init := range initSteps {
+		if err := processElement(init, client); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func processElement(init interface{}, client *http.Client) error {
+	switch val := init.(type) {
+	case string:
+		if isValidCheckPrefix(val) {
+			return expect.CheckExpectations("", 0, []string{val}, client)
+		}
+	case map[interface{}]interface{}:
+		if expectVal, exists := val["expect"]; exists {
+			switch expectType := expectVal.(type) {
+			case []interface{}:
+				// Convert expectType to []string
+				strs := make([]string, len(expectType))
+				for i, v := range expectType {
+					if s, ok := v.(string); ok {
+						strs[i] = s
+					} else {
+						return fmt.Errorf("unsupported expect value: %v", v)
+					}
+				}
+				return expect.CheckExpectations("", 0, strs, client)
+			case string:
+				if isValidCheckPrefix(expectType) {
+					return expect.CheckExpectations("", 0, []string{expectType}, client)
+				}
+				return fmt.Errorf("unsupported expect value: %v", expectVal)
+			default:
+				return fmt.Errorf("unsupported expect value type: %T", expectVal)
+			}
+		}
+	}
+	return nil
+}
+
+func isValidCheckPrefix(s string) bool {
+	return strings.HasPrefix(s, "ENV:") || strings.HasPrefix(s, "FILE:") || strings.HasPrefix(s, "DIR:") || strings.HasPrefix(s, "URL:") || (strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\""))
+}
+
 // Main function to handle run commands
 func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 	logs := new(logs)
@@ -67,6 +114,16 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 					LogInfo("🔍 Resolving dependency " + resNode)
 					if res.Run != nil {
 
+						// Handle check steps with expect
+						for _, step := range res.Run {
+							if checkSteps, ok := step.Check.([]interface{}); ok {
+								if err := dr.processCheckSteps(checkSteps, client); err != nil {
+									return LogError("Check expectation failed for resource '"+resNode+"'", err)
+								}
+							}
+						}
+
+						// Handle exec steps
 						for _, step := range res.Run {
 							if step.Exec != "" {
 								output, exitCode, err := exec.ExecuteCommand(step.Exec)

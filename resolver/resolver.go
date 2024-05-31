@@ -21,7 +21,9 @@ type DependencyResolver struct {
 type RunStep struct {
 	Name   string      `yaml:"name"`
 	Exec   string      `yaml:"exec"`
-	Expect interface{} `yaml:"expect"` // This can be either a string, a number, or a slice of strings/numbers
+	Skip   interface{} `yaml:"skip"`
+	Check  interface{} `yaml:"check"`
+	Expect interface{} `yaml:"expect"`
 }
 
 type ResourceEntry struct {
