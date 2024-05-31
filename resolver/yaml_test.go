@@ -53,3 +53,50 @@ resources:
 		t.Errorf("Expected resources 'testres1' and 'testres2', got '%s' and '%s'", dr.Resources[0].Resource, dr.Resources[1].Resource)
 	}
 }
+
+func TestLoadResourceEntries_CircularDependency(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	logger := log.New(nil)
+	dr, err := NewDependencyResolver(fs, logger)
+	if err != nil {
+		log.Fatalf("Failed to create dependency resolver: %v", err)
+	}
+
+	yamlData := `
+resources:
+  - resource: "a"
+    name: "Resource A"
+    sdesc: "Short description A"
+    ldesc: "Long description A"
+    category: "test"
+    requires:
+      - "c"
+  - resource: "b"
+    name: "Resource B"
+    sdesc: "Short description B"
+    ldesc: "Long description B"
+    category: "test"
+    requires:
+      - "a"
+  - resource: "c"
+    name: "Resource C"
+    sdesc: "Short description C"
+    ldesc: "Long description C"
+    category: "test"
+    requires:
+      - "b"
+`
+	afero.WriteFile(fs, testFilePaths[0], []byte(yamlData), 0644)
+	dr.LoadResourceEntries(testFilePaths[0])
+
+	if len(dr.Resources) != 3 {
+		t.Errorf("Expected 3 resources, got %d", len(dr.Resources))
+	}
+
+	expectedResources := []string{"a", "b", "c"}
+	for i, res := range expectedResources {
+		if dr.Resources[i].Resource != res {
+			t.Errorf("Expected resource %s, got %s", res, dr.Resources[i].Resource)
+		}
+	}
+}

@@ -282,3 +282,31 @@ func TestTreeListCommand(t *testing.T) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
 }
+
+func TestDependsCommand_CircularDependency(t *testing.T) {
+	initTestConfig()
+	resolver := setupTestResolver()
+	rootCmd := &cobra.Command{Use: "kdeps"}
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "depends [resource_names...]",
+		Short: "List dependencies of the given resources",
+		Run: func(cmd *cobra.Command, args []string) {
+			resolver.HandleDependsCommand(args)
+		},
+	})
+
+	args := []string{"depends", "res1"}
+	rootCmd.SetArgs(args)
+
+	output := captureOutput(func() {
+		err := rootCmd.Execute()
+		if err != nil {
+			t.Fatalf("Failed to execute command: %v", err)
+		}
+	})
+
+	expectedOutput := "res1\nres1 -> res2\nres1 -> res2 -> res3"
+	if !strings.Contains(output, expectedOutput) {
+		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
+	}
+}

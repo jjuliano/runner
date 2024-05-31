@@ -190,3 +190,34 @@ z
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output.String())
 	}
 }
+
+func TestListDirectDependencies_CircularDependency(t *testing.T) {
+	resolver := setupTestResolver()
+	resolver.Resources = []ResourceEntry{
+		{Resource: "a", Name: "A", Sdesc: "Resource A", Ldesc: "First resource", Category: "example", Requires: []string{"c"}},
+		{Resource: "b", Name: "B", Sdesc: "Resource B", Ldesc: "Second resource", Category: "example", Requires: []string{"a"}},
+		{Resource: "c", Name: "C", Sdesc: "Resource C", Ldesc: "Third resource", Category: "example", Requires: []string{"b"}},
+	}
+	for _, entry := range resolver.Resources {
+		resolver.resourceDependencies[entry.Resource] = entry.Requires
+	}
+
+	var output strings.Builder
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	resolver.Graph.ListDirectDependencies("a")
+
+	w.Close()
+	os.Stdout = old
+	io.Copy(&output, r)
+
+	expectedOutput := `a
+a -> c
+a -> c -> b
+`
+	if output.String() != expectedOutput {
+		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output.String())
+	}
+}
