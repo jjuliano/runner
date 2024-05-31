@@ -18,8 +18,9 @@ type stepLog struct {
 	targetRes string
 }
 
-func (m *logs) addLogs(entry stepLog) {
+func (m *logs) addLogs(entry stepLog, logChan chan<- stepLog) {
 	*m = append(*m, entry)
+	logChan <- entry // Send log entry to the channel
 }
 
 func (m logs) getLogs() []stepLog {
@@ -41,10 +42,21 @@ func formatLogEntry(entry stepLog) string {
 	}, "\n")
 }
 
+// Main function to handle run commands
 func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 	logs := new(logs)
 	visited := make(map[string]bool)
 	client := &http.Client{}
+	logChan := make(chan stepLog) // Create a channel for log entries
+
+	go func() {
+		for logEntry := range logChan {
+			if logEntry.name != "" {
+				formattedLog := formatLogEntry(logEntry)
+				LogInfo("🏃 Running " + logEntry.name + "... " + formattedLog)
+			}
+		}
+	}()
 
 	for _, resName := range resources {
 		stack := dr.Graph.BuildDependencyStack(resName, visited)
@@ -60,7 +72,7 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 								output, exitCode, err := exec.ExecuteCommand(step.Exec)
 
 								if step.Name != "" {
-									logs.addLogs(stepLog{targetRes: resNode, command: step.Exec, res: res.Name, name: step.Name, message: output})
+									logs.addLogs(stepLog{targetRes: resNode, command: step.Exec, res: res.Name, name: step.Name, message: output}, logChan)
 								}
 
 								if err != nil {
@@ -77,16 +89,10 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 						}
 					}
 				}
-
-				for _, val := range logs.getLogs() {
-					if val.name != "" {
-						formattedLog := formatLogEntry(val)
-						LogInfo("🏃 Running " + val.name + "... " + formattedLog)
-					}
-				}
 			}
 		}
 	}
+	close(logChan) // Close the channel when done
 	return nil
 }
 
