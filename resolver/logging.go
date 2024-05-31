@@ -2,17 +2,18 @@ package resolver
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/charmbracelet/log"
 )
 
 var logger = log.Default()
 
-// LogError logs an error message and exits the program
-func LogError(message string, err error) {
-	logger.Errorf("%s: %s", message, err)
-	os.Exit(1)
+// LogError logs an error message and returns the error
+func LogError(message string, err error) error {
+	msg := fmt.Sprintf("❌ %s: %s", message, err)
+	logger.Errorf(msg) // log library does not return an error object
+
+	return fmt.Errorf(msg)
 }
 
 // LogInfo logs an informational message

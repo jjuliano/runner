@@ -5,11 +5,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func (dr *DependencyResolver) LoadResourceEntries(filePath string) {
+func (dr *DependencyResolver) LoadResourceEntries(filePath string) error {
 	data, err := afero.ReadFile(dr.Fs, filePath)
 	if err != nil {
-		PrintMessage("Error reading file %s: %v\n", filePath, err)
-		return
+		return LogError("Error reading file "+filePath, err)
 	}
 
 	var fileResources struct {
@@ -17,28 +16,28 @@ func (dr *DependencyResolver) LoadResourceEntries(filePath string) {
 	}
 
 	if err := yaml.Unmarshal(data, &fileResources); err != nil {
-		PrintMessage("Error unmarshalling YAML data from file %s: %v\n", filePath, err)
-		return
+		return LogError("Error unmarshalling YAML data from file "+filePath, err)
 	}
 
 	dr.Resources = append(dr.Resources, fileResources.Resources...)
 	for _, entry := range fileResources.Resources {
 		dr.resourceDependencies[entry.Resource] = entry.Requires
 	}
+	return nil
 }
 
-func (dr *DependencyResolver) ShowResourceEntry(res string) {
+func (dr *DependencyResolver) ShowResourceEntry(res string) error {
 	for _, entry := range dr.Resources {
 		if entry.Resource == res {
 			PrintMessage("Resource: %s\nName: %s\nShort Description: %s\nLong Description: %s\nCategory: %s\nRequirements: %v\n",
 				entry.Resource, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
-			return
+			return nil
 		}
 	}
-	PrintMessage("Resource %s not found\n", res)
+	return LogError("Resource "+res+" not found", nil)
 }
 
-func (dr *DependencyResolver) SaveResourceEntries(filePath string) {
+func (dr *DependencyResolver) SaveResourceEntries(filePath string) error {
 	data := struct {
 		Resources []ResourceEntry `yaml:"resources"`
 	}{
@@ -47,12 +46,12 @@ func (dr *DependencyResolver) SaveResourceEntries(filePath string) {
 
 	content, err := yaml.Marshal(data)
 	if err != nil {
-		Println("Error marshalling YAML:", err)
-		return
+		return LogError("Error marshalling YAML", err)
 	}
 
 	err = afero.WriteFile(dr.Fs, filePath, content, 0644)
 	if err != nil {
-		Println("Error writing file:", err)
+		return LogError("Error writing file "+filePath, err)
 	}
+	return nil
 }

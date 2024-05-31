@@ -39,12 +39,3 @@ func captureOutput(f func()) string {
 	os.Stdout = old
 	return <-outC
 }
-
-// getSecondStrings is a utility function used by FuzzySearch test
-func getSecondStrings(entries [][2]string) []string {
-	strs := make([]string, len(entries))
-	for i, entry := range entries {
-		strs[i] = entry[1]
-	}
-	return strs
-}

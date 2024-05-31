@@ -40,7 +40,7 @@ func formatLogEntry(entry stepLog) string {
 	}, "\n")
 }
 
-func (dr *DependencyResolver) HandleRunCommand(resources []string) {
+func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 	logs := new(logs)
 
 	for _, resName := range resources {
@@ -57,13 +57,13 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) {
 						}
 
 						if err != nil {
-							LogError("❌ Error executing command '"+step.Exec+"'", err)
+							return LogError("Error executing command '"+step.Exec+"'", err)
 						}
 
 						if step.Expect != nil {
 							expectations := expect.ProcessExpectations(step.Expect)
 							if err := expect.CheckExpectations(output, exitCode, expectations); err != nil {
-								LogError("❌ "+err.Error()+" for command '"+step.Exec+"'", err)
+								return LogError("Expectation check failed for command '"+step.Exec+"'", err)
 							}
 						}
 					}
@@ -78,36 +78,42 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) {
 			}
 		}
 	}
+	return nil
 }
 
-func (dr *DependencyResolver) HandleShowCommand(resources []string) {
+func (dr *DependencyResolver) HandleShowCommand(resources []string) error {
 	for _, res := range resources {
-		dr.ShowResourceEntry(res)
+		if err := dr.ShowResourceEntry(res); err != nil {
+			return LogError("Error showing resource entry "+res, err)
+		}
 	}
+	return nil
 }
 
-func (dr *DependencyResolver) HandleDependsCommand(resources []string) {
+func (dr *DependencyResolver) HandleDependsCommand(resources []string) error {
 	for _, res := range resources {
-		dr.Graph.ListDirectDependencies(res)
+		dr.Graph.ListDirectDependencies(res) // TODO: Return error on kartographer plugin
 	}
+	return nil
 }
 
-func (dr *DependencyResolver) HandleRDependsCommand(resources []string) {
+func (dr *DependencyResolver) HandleRDependsCommand(resources []string) error {
 	for _, res := range resources {
-		dr.Graph.ListReverseDependencies(res)
+		dr.Graph.ListReverseDependencies(res) // TODO: Return error on kartographer plugin
 	}
+	return nil
 }
 
-func (dr *DependencyResolver) HandleSearchCommand(resources []string) {
+func (dr *DependencyResolver) HandleSearchCommand(resources []string) error {
 	query := resources[0]
 	keys := resources[1:]
-	dr.FuzzySearch(query, keys)
+	return dr.FuzzySearch(query, keys)
 }
 
-func (dr *DependencyResolver) HandleCategoryCommand(resources []string) {
+func (dr *DependencyResolver) HandleCategoryCommand(resources []string) error {
 	if len(resources) == 0 {
 		Println("Usage: kdeps category [categories...]")
-		return
+		return nil
 	}
 	for _, entry := range dr.Resources {
 		for _, category := range resources {
@@ -116,24 +122,28 @@ func (dr *DependencyResolver) HandleCategoryCommand(resources []string) {
 			}
 		}
 	}
+	return nil
 }
 
-func (dr *DependencyResolver) HandleTreeCommand(resources []string) {
+func (dr *DependencyResolver) HandleTreeCommand(resources []string) error {
 	for _, res := range resources {
-		dr.Graph.ListDependencyTree(res)
+		dr.Graph.ListDependencyTree(res) // TODO: Return error on kartographer plugin
 	}
+	return nil
 }
 
-func (dr *DependencyResolver) HandleTreeListCommand(resources []string) {
+func (dr *DependencyResolver) HandleTreeListCommand(resources []string) error {
 	for _, res := range resources {
-		dr.Graph.ListDependencyTreeTopDown(res)
+		dr.Graph.ListDependencyTreeTopDown(res) // TODO: Return error on kartographer plugin
 	}
+	return nil
 }
 
-func (dr *DependencyResolver) HandleIndexCommand() {
+func (dr *DependencyResolver) HandleIndexCommand() error {
 	for _, entry := range dr.Resources {
 		PrintMessage("📦 Resource: %s\n📛 Name: %s\n📝 Short Description: %s\n📖 Long Description: %s\n🏷️ Category: %s\n🔗 Requirements: %v\n",
 			entry.Resource, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
 		Println("---")
 	}
+	return nil
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"kdeps/resolver"
@@ -38,7 +39,10 @@ func main() {
 		Short: "A resource dependency resolver",
 	}
 
-	dependencyResolver := resolver.NewDependencyResolver(afero.NewOsFs(), logger)
+	dependencyResolver, err := resolver.NewDependencyResolver(afero.NewOsFs(), logger)
+	if err != nil {
+		log.Fatalf("Failed to create dependency resolver: %v", err)
+	}
 
 	resourceFiles := viper.GetStringSlice("resource_files")
 	for _, file := range resourceFiles {

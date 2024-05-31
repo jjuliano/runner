@@ -1,6 +1,8 @@
 package resolver
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/log"
 	graph "github.com/kdeps/kartographer/graph"
 	"github.com/spf13/afero"
@@ -32,7 +34,7 @@ type ResourceEntry struct {
 	Run      []RunStep `yaml:"run"`
 }
 
-func NewDependencyResolver(fs afero.Fs, logger *log.Logger) *DependencyResolver {
+func NewDependencyResolver(fs afero.Fs, logger *log.Logger) (*DependencyResolver, error) {
 	dr := &DependencyResolver{
 		Fs:                   fs,
 		resourceDependencies: make(map[string][]string),
@@ -40,5 +42,8 @@ func NewDependencyResolver(fs afero.Fs, logger *log.Logger) *DependencyResolver 
 		logger:               logger,
 	}
 	dr.Graph = graph.NewDependencyGraph(fs, logger, dr.resourceDependencies)
-	return dr
+	if dr.Graph == nil {
+		return nil, fmt.Errorf("failed to initialize dependency graph")
+	}
+	return dr, nil
 }

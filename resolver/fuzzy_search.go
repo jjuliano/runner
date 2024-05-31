@@ -6,7 +6,7 @@ import (
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
-func (dr *DependencyResolver) FuzzySearch(query string, keys []string) {
+func (dr *DependencyResolver) FuzzySearch(query string, keys []string) error {
 	if len(keys) == 0 {
 		// If no keys are provided, search in all fields
 		keys = []string{"resource", "name", "sdesc", "ldesc", "category"}
@@ -33,6 +33,10 @@ func (dr *DependencyResolver) FuzzySearch(query string, keys []string) {
 	}
 
 	matches := fuzzy.Find(query, getSecondStrings(combinedEntries))
+	if len(matches) == 0 {
+		return LogError("No matches found for query: "+query, nil)
+	}
+
 	for _, match := range matches {
 		for _, entry := range combinedEntries {
 			if entry[1] == match {
@@ -42,4 +46,13 @@ func (dr *DependencyResolver) FuzzySearch(query string, keys []string) {
 			}
 		}
 	}
+	return nil
+}
+
+func getSecondStrings(entries [][2]string) []string {
+	secondStrings := make([]string, len(entries))
+	for i, entry := range entries {
+		secondStrings[i] = entry[1]
+	}
+	return secondStrings
 }
