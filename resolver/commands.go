@@ -1,8 +1,6 @@
 package resolver
 
 import (
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/kdeps/plugins/exec"
@@ -47,7 +45,7 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) {
 
 	for _, resName := range resources {
 		for _, res := range dr.Resources {
-			dr.logger.Info(fmt.Sprintf("🔍 Resolving dependency %s", res.Resource))
+			LogInfo("🔍 Resolving dependency " + res.Resource)
 
 			if res.Resource == resName && res.Run != nil {
 				for _, step := range res.Run {
@@ -59,15 +57,13 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) {
 						}
 
 						if err != nil {
-							dr.logger.Errorf("❌ Error executing command '%s': %s\n", step.Exec, err)
-							os.Exit(1)
+							LogError("❌ Error executing command '"+step.Exec+"'", err)
 						}
 
 						if step.Expect != nil {
 							expectations := expect.ProcessExpectations(step.Expect)
 							if err := expect.CheckExpectations(output, exitCode, expectations); err != nil {
-								dr.logger.Errorf("❌ %s for command '%s'\n", err, step.Exec)
-								os.Exit(1)
+								LogError("❌ "+err.Error()+" for command '"+step.Exec+"'", err)
 							}
 						}
 					}
@@ -77,7 +73,7 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) {
 			for _, val := range logs.getLogs() {
 				if val.name != "" {
 					formattedLog := formatLogEntry(val)
-					dr.logger.Printf("🏃 Running %s... %s", val.name, formattedLog)
+					LogInfo("🏃 Running " + val.name + "... " + formattedLog)
 				}
 			}
 		}
@@ -110,13 +106,13 @@ func (dr *DependencyResolver) HandleSearchCommand(resources []string) {
 
 func (dr *DependencyResolver) HandleCategoryCommand(resources []string) {
 	if len(resources) == 0 {
-		fmt.Println("Usage: kdeps category [categories...]")
+		Println("Usage: kdeps category [categories...]")
 		return
 	}
 	for _, entry := range dr.Resources {
 		for _, category := range resources {
 			if entry.Category == category {
-				fmt.Println("📂 " + entry.Resource)
+				Println("📂 " + entry.Resource)
 			}
 		}
 	}
@@ -136,8 +132,8 @@ func (dr *DependencyResolver) HandleTreeListCommand(resources []string) {
 
 func (dr *DependencyResolver) HandleIndexCommand() {
 	for _, entry := range dr.Resources {
-		fmt.Printf("📦 Resource: %s\n📛 Name: %s\n📝 Short Description: %s\n📖 Long Description: %s\n🏷️ Category: %s\n🔗 Requirements: %v\n",
+		PrintMessage("📦 Resource: %s\n📛 Name: %s\n📝 Short Description: %s\n📖 Long Description: %s\n🏷️ Category: %s\n🔗 Requirements: %v\n",
 			entry.Resource, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
-		fmt.Println("---")
+		Println("---")
 	}
 }

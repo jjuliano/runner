@@ -1,7 +1,6 @@
 package resolver
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -38,7 +37,7 @@ func (dr *DependencyResolver) FuzzySearch(query string, keys []string) {
 		for _, entry := range combinedEntries {
 			if entry[1] == match {
 				dr.ShowResourceEntry(entry[0])
-				fmt.Println("---")
+				Println("---")
 				break
 			}
 		}

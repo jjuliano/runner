@@ -2,7 +2,6 @@ package resolver
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 )
@@ -11,7 +10,7 @@ import (
 func captureOutput(f func()) string {
 	r, w, err := os.Pipe()
 	if err != nil {
-		fmt.Println("Error creating pipe:", err)
+		PrintError("Error creating pipe", err)
 		return ""
 	}
 
@@ -24,7 +23,7 @@ func captureOutput(f func()) string {
 		var buf bytes.Buffer
 		_, err := io.Copy(&buf, r)
 		if err != nil {
-			fmt.Println("Error copying output:", err)
+			PrintError("Error copying output", err)
 		}
 		outC <- buf.String()
 	}()
@@ -35,13 +34,13 @@ func captureOutput(f func()) string {
 	// Restore the original stdout and close the pipe
 	err = w.Close()
 	if err != nil {
-		fmt.Println("Error closing pipe:", err)
+		PrintError("Error closing pipe", err)
 	}
 	os.Stdout = old
 	return <-outC
 }
 
-// getSecondStrings is a utility function used by FuzzySearch
+// getSecondStrings is a utility function used by FuzzySearch test
 func getSecondStrings(entries [][2]string) []string {
 	strs := make([]string, len(entries))
 	for i, entry := range entries {

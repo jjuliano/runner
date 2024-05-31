@@ -1,19 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"kdeps/resolver"
 
-	"github.com/charmbracelet/log"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
-	command  string
+	command   string
 	resources []string
 )
 
@@ -24,13 +22,13 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading config file: %s\n", err)
+		resolver.PrintError("Error reading config file", err)
 		os.Exit(1)
 	}
 }
 
 func main() {
-	logger := log.Default()
+	logger := resolver.GetLogger()
 	logger.Helper()
 
 	initConfig() // Load configuration at the start
@@ -40,18 +38,18 @@ func main() {
 		Short: "A resource dependency resolver",
 	}
 
-	resolver := resolver.NewDependencyResolver(afero.NewOsFs(), logger)
+	dependencyResolver := resolver.NewDependencyResolver(afero.NewOsFs(), logger)
 
 	resourceFiles := viper.GetStringSlice("resource_files")
 	for _, file := range resourceFiles {
-		resolver.LoadResourceEntries(file) // Load resource entries from each file
+		dependencyResolver.LoadResourceEntries(file) // Load resource entries from each file
 	}
 
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "depends [resource_names...]",
 		Short: "List dependencies of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleDependsCommand(args)
+			dependencyResolver.HandleDependsCommand(args)
 		},
 	})
 
@@ -59,7 +57,7 @@ func main() {
 		Use:   "rdepends [resource_names...]",
 		Short: "List reverse dependencies of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleRDependsCommand(args)
+			dependencyResolver.HandleRDependsCommand(args)
 		},
 	})
 
@@ -67,7 +65,7 @@ func main() {
 		Use:   "show [resource_names...]",
 		Short: "Show details of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleShowCommand(args)
+			dependencyResolver.HandleShowCommand(args)
 		},
 	})
 
@@ -75,7 +73,7 @@ func main() {
 		Use:   "search [resource_names...]",
 		Short: "Search for the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleSearchCommand(args)
+			dependencyResolver.HandleSearchCommand(args)
 		},
 	})
 
@@ -83,7 +81,7 @@ func main() {
 		Use:   "category [resource_names...]",
 		Short: "List categories of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleCategoryCommand(args)
+			dependencyResolver.HandleCategoryCommand(args)
 		},
 	})
 
@@ -91,7 +89,7 @@ func main() {
 		Use:   "tree [resource_names...]",
 		Short: "Show dependency tree of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleTreeCommand(args)
+			dependencyResolver.HandleTreeCommand(args)
 		},
 	})
 
@@ -99,7 +97,7 @@ func main() {
 		Use:   "tree-list [resource_names...]",
 		Short: "Show dependency tree list of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleTreeListCommand(args)
+			dependencyResolver.HandleTreeListCommand(args)
 		},
 	})
 
@@ -107,7 +105,7 @@ func main() {
 		Use:   "index",
 		Short: "List all resource entries",
 		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleIndexCommand()
+			dependencyResolver.HandleIndexCommand()
 		},
 	})
 
@@ -115,12 +113,12 @@ func main() {
 		Use:   "run [resource_names...]",
 		Short: "Run the commands for the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleRunCommand(args)
+			dependencyResolver.HandleRunCommand(args)
 		},
 	})
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		resolver.PrintMessage("%v\n", err)
 		os.Exit(1)
 	}
 }
