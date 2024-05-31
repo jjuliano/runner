@@ -89,12 +89,39 @@ func isValidCheckPrefix(s string) bool {
 	return strings.HasPrefix(s, "ENV:") || strings.HasPrefix(s, "FILE:") || strings.HasPrefix(s, "DIR:") || strings.HasPrefix(s, "URL:") || (strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\""))
 }
 
+// Execute the command and handle the result
+func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, logChan chan<- stepLog, client *http.Client) error {
+	result := <-exec.ExecuteCommand(step.Exec)
+
+	if step.Name != "" {
+		logs.addLogs(stepLog{
+			targetRes: resNode,
+			command:   step.Exec,
+			res:       resName,
+			name:      step.Name,
+			message:   result.Output,
+		}, logChan)
+	}
+
+	if result.Err != nil {
+		return result.Err
+	}
+
+	if step.Expect != nil {
+		expectations := expect.ProcessExpectations(step.Expect)
+		if err := expect.CheckExpectations(result.Output, result.ExitCode, expectations, client); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Main function to handle run commands
 func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 	logs := new(logs)
 	visited := make(map[string]bool)
 	client := &http.Client{}
-	logChan := make(chan stepLog) // Create a channel for log entries
+	logChan := make(chan stepLog)
 
 	go func() {
 		for logEntry := range logChan {
@@ -105,6 +132,8 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 		}
 	}()
 
+	defer close(logChan) // Ensure the channel is closed when done
+
 	for _, resName := range resources {
 		stack := dr.Graph.BuildDependencyStack(resName, visited)
 
@@ -113,7 +142,6 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 				if res.Resource == resNode {
 					LogInfo("🔍 Resolving dependency " + resNode)
 					if res.Run != nil {
-
 						// Handle check steps with expect
 						for _, step := range res.Run {
 							if checkSteps, ok := step.Check.([]interface{}); ok {
@@ -126,25 +154,8 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 						// Handle exec steps
 						for _, step := range res.Run {
 							if step.Exec != "" {
-								resultChan := exec.ExecuteCommand(step.Exec)
-								result := <-resultChan
-								output := result.Output
-								exitCode := result.ExitCode
-								err := result.Err
-
-								if step.Name != "" {
-									logs.addLogs(stepLog{targetRes: resNode, command: step.Exec, res: res.Name, name: step.Name, message: output}, logChan)
-								}
-
-								if err != nil {
+								if err := executeAndLogCommand(step, res.Name, resNode, logs, logChan, client); err != nil {
 									return LogError("Error executing command '"+step.Exec+"'", err)
-								}
-
-								if step.Expect != nil {
-									expectations := expect.ProcessExpectations(step.Expect)
-									if err := expect.CheckExpectations(output, exitCode, expectations, client); err != nil {
-										return LogError("Expectation check failed for command '"+step.Exec+"'", err)
-									}
 								}
 							}
 						}
@@ -153,7 +164,6 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 			}
 		}
 	}
-	close(logChan) // Close the channel when done
 	return nil
 }
 
