@@ -165,7 +165,7 @@ func TestShowCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "Resource: res1\nName: Resource 1\nShort Description: Short description 1\nLong Description: Long description 1\nCategory: cat1\nRequirements: [res2]\n"
+	expectedOutput := "📦 Resource: res1\n📛 Name: Resource 1\n📝 Short Description: Short description 1\n📖 Long Description: Long description 1\n🏷️  Category: cat1\n🔗 Requirements: [res2]\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
@@ -193,7 +193,7 @@ func TestSearchCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "Resource: res1\nName: Resource 1\nShort Description: Short description 1\nLong Description: Long description 1\nCategory: cat1\n"
+	expectedOutput := "📦 Resource: res1\n📛 Name: Resource 1\n📝 Short Description: Short description 1\n📖 Long Description: Long description 1\n🏷️  Category: cat1\n🔗 Requirements: [res2]\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
