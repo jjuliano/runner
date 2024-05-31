@@ -10,16 +10,16 @@ import (
 func (dr *DependencyResolver) FuzzySearch(query string, keys []string) {
 	if len(keys) == 0 {
 		// If no keys are provided, search in all fields
-		keys = []string{"package", "name", "sdesc", "ldesc", "category"}
+		keys = []string{"resource", "name", "sdesc", "ldesc", "category"}
 	}
 
-	combinedEntries := make([][2]string, len(dr.Packages))
-	for i, entry := range dr.Packages {
+	combinedEntries := make([][2]string, len(dr.Resources))
+	for i, entry := range dr.Resources {
 		var combined strings.Builder
 		for _, key := range keys {
 			switch key {
-			case "package":
-				combined.WriteString(entry.Package + " ")
+			case "resource":
+				combined.WriteString(entry.Resource + " ")
 			case "name":
 				combined.WriteString(entry.Name + " ")
 			case "sdesc":
@@ -30,14 +30,14 @@ func (dr *DependencyResolver) FuzzySearch(query string, keys []string) {
 				combined.WriteString(entry.Category + " ")
 			}
 		}
-		combinedEntries[i] = [2]string{entry.Package, combined.String()}
+		combinedEntries[i] = [2]string{entry.Resource, combined.String()}
 	}
 
 	matches := fuzzy.Find(query, getSecondStrings(combinedEntries))
 	for _, match := range matches {
 		for _, entry := range combinedEntries {
 			if entry[1] == match {
-				dr.ShowPackageEntry(entry[0])
+				dr.ShowResourceEntry(entry[0])
 				fmt.Println("---")
 				break
 			}

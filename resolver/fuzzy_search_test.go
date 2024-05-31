@@ -10,12 +10,12 @@ import (
 	"github.com/spf13/afero"
 )
 
-// MockShowPackageEntry is a mock function to replace ShowPackageEntry for testing purposes.
-func (dr *DependencyResolver) MockShowPackageEntry(pkg string) string {
-	for _, entry := range dr.Packages {
-		if entry.Package == pkg {
-			return fmt.Sprintf("PackageEntry{Package:%s Name:%s Sdesc:%s Ldesc:%s Category:%s}\n",
-				entry.Package, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category)
+// MockShowResourceEntry is a mock function to replace ShowResourceEntry for testing purposes.
+func (dr *DependencyResolver) MockShowResourceEntry(res string) string {
+	for _, entry := range dr.Resources {
+		if entry.Resource == res {
+			return fmt.Sprintf("ResourceEntry{Resource:%s Name:%s Sdesc:%s Ldesc:%s Category:%s}\n",
+				entry.Resource, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category)
 		}
 	}
 	return ""
@@ -25,22 +25,22 @@ func (dr *DependencyResolver) MockShowPackageEntry(pkg string) string {
 func TestDependencyResolver_FuzzySearch(t *testing.T) {
 	logger := log.New(nil)
 	resolver := NewDependencyResolver(afero.NewMemMapFs(), logger)
-	resolver.Packages = []PackageEntry{
-		{Package: "a", Name: "A", Sdesc: "Package A", Ldesc: "The first package in the alphabetical order", Category: "example"},
-		{Package: "b", Name: "B", Sdesc: "Package B", Ldesc: "The second package, dependent on A", Category: "example"},
-		{Package: "c", Name: "C", Sdesc: "Package C", Ldesc: "The third package, dependent on B", Category: "example"},
-		// Add more packages as needed for the test
+	resolver.Resources = []ResourceEntry{
+		{Resource: "a", Name: "A", Sdesc: "Resource A", Ldesc: "The first resource in the alphabetical order", Category: "example"},
+		{Resource: "b", Name: "B", Sdesc: "Resource B", Ldesc: "The second resource, dependent on A", Category: "example"},
+		{Resource: "c", Name: "C", Sdesc: "Resource C", Ldesc: "The third resource, dependent on B", Category: "example"},
+		// Add more resources as needed for the test
 	}
 
-	// Modify FuzzySearch temporarily within the test to return matched packages
+	// Modify FuzzySearch temporarily within the test to return matched resources
 	fuzzySearch := func(query string, keys []string) []string {
-		combinedEntries := make([][2]string, len(resolver.Packages))
-		for i, entry := range resolver.Packages {
+		combinedEntries := make([][2]string, len(resolver.Resources))
+		for i, entry := range resolver.Resources {
 			var combined strings.Builder
 			for _, key := range keys {
 				switch key {
-				case "package":
-					combined.WriteString(entry.Package + " ")
+				case "resource":
+					combined.WriteString(entry.Resource + " ")
 				case "name":
 					combined.WriteString(entry.Name + " ")
 				case "sdesc":
@@ -51,31 +51,31 @@ func TestDependencyResolver_FuzzySearch(t *testing.T) {
 					combined.WriteString(entry.Category + " ")
 				}
 			}
-			combinedEntries[i] = [2]string{entry.Package, combined.String()}
+			combinedEntries[i] = [2]string{entry.Resource, combined.String()}
 		}
 
 		matches := fuzzy.Find(query, getSecondStrings(combinedEntries))
-		var matchedPackages []string
+		var matchedResources []string
 		for _, match := range matches {
 			for _, entry := range combinedEntries {
 				if strings.TrimSpace(entry[1]) == strings.TrimSpace(match) {
-					matchedPackages = append(matchedPackages, entry[0])
+					matchedResources = append(matchedResources, entry[0])
 					break
 				}
 			}
 		}
-		return matchedPackages
+		return matchedResources
 	}
 
 	output := captureOutput(func() {
 		matches := fuzzySearch("second", []string{"ldesc"})
 		for _, match := range matches {
-			fmt.Print(resolver.MockShowPackageEntry(match))
+			fmt.Print(resolver.MockShowResourceEntry(match))
 			fmt.Println("---")
 		}
 	})
 
-	expectedOutput := "PackageEntry{Package:b Name:B Sdesc:Package B Ldesc:The second package, dependent on A Category:example}\n---\n"
+	expectedOutput := "ResourceEntry{Resource:b Name:B Sdesc:Resource B Ldesc:The second resource, dependent on A Category:example}\n---\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output %s, got %s", expectedOutput, output)
 	}

@@ -1,207 +1,207 @@
-packages:
-  - package: a
+resources:
+  - resource: a
     name: "A"
-    sdesc: "Package A"
-    ldesc: "The first package in the alphabetical order"
+    sdesc: "Resource A"
+    ldesc: "The first resource in the alphabetical order"
     category: example
     requires: []
 
-  - package: b
+  - resource: b
     name: "B"
-    sdesc: "Package B"
-    ldesc: "The second package, dependent on A"
+    sdesc: "Resource B"
+    ldesc: "The second resource, dependent on A"
     category: example
     requires:
       - a
 
-  - package: c
+  - resource: c
     name: "C"
-    sdesc: "Package C"
-    ldesc: "The third package, dependent on B"
+    sdesc: "Resource C"
+    ldesc: "The third resource, dependent on B"
     category: example
     requires:
       - b
 
-  - package: d
+  - resource: d
     name: "D"
-    sdesc: "Package D"
-    ldesc: "The fourth package, dependent on C"
+    sdesc: "Resource D"
+    ldesc: "The fourth resource, dependent on C"
     category: example
     requires:
       - c
 
-  - package: e
+  - resource: e
     name: "E"
-    sdesc: "Package E"
-    ldesc: "The fifth package, dependent on D"
+    sdesc: "Resource E"
+    ldesc: "The fifth resource, dependent on D"
     category: example
     requires:
       - d
 
-  - package: f
+  - resource: f
     name: "F"
-    sdesc: "Package F"
-    ldesc: "The sixth package, dependent on E"
+    sdesc: "Resource F"
+    ldesc: "The sixth resource, dependent on E"
     category: example
     requires:
       - e
 
-  - package: g
+  - resource: g
     name: "G"
-    sdesc: "Package G"
-    ldesc: "The seventh package, dependent on F"
+    sdesc: "Resource G"
+    ldesc: "The seventh resource, dependent on F"
     category: example
     requires:
       - f
 
-  - package: h
+  - resource: h
     name: "H"
-    sdesc: "Package H"
-    ldesc: "The eighth package, dependent on G"
+    sdesc: "Resource H"
+    ldesc: "The eighth resource, dependent on G"
     category: example
     requires:
       - g
 
-  - package: i
+  - resource: i
     name: "I"
-    sdesc: "Package I"
-    ldesc: "The ninth package, dependent on H"
+    sdesc: "Resource I"
+    ldesc: "The ninth resource, dependent on H"
     category: example
     requires:
       - h
 
-  - package: j
+  - resource: j
     name: "J"
-    sdesc: "Package J"
-    ldesc: "The tenth package, dependent on I"
+    sdesc: "Resource J"
+    ldesc: "The tenth resource, dependent on I"
     category: example
     requires:
       - i
 
-  - package: k
+  - resource: k
     name: "K"
-    sdesc: "Package K"
-    ldesc: "The eleventh package, dependent on J"
+    sdesc: "Resource K"
+    ldesc: "The eleventh resource, dependent on J"
     category: example
     requires:
       - j
 
-  - package: l
+  - resource: l
     name: "L"
-    sdesc: "Package L"
-    ldesc: "The twelfth package, dependent on K"
+    sdesc: "Resource L"
+    ldesc: "The twelfth resource, dependent on K"
     category: example
     requires:
       - k
 
-  - package: m
+  - resource: m
     name: "M"
-    sdesc: "Package M"
-    ldesc: "The thirteenth package, dependent on L"
+    sdesc: "Resource M"
+    ldesc: "The thirteenth resource, dependent on L"
     category: example
     requires:
       - l
 
-  - package: n
+  - resource: n
     name: "N"
-    sdesc: "Package N"
-    ldesc: "The fourteenth package, dependent on M"
+    sdesc: "Resource N"
+    ldesc: "The fourteenth resource, dependent on M"
     category: example
     requires:
       - m
 
-  - package: o
+  - resource: o
     name: "O"
-    sdesc: "Package O"
-    ldesc: "The fifteenth package, dependent on N"
+    sdesc: "Resource O"
+    ldesc: "The fifteenth resource, dependent on N"
     category: example
     requires:
       - n
 
-  - package: p
+  - resource: p
     name: "P"
-    sdesc: "Package P"
-    ldesc: "The sixteenth package, dependent on O"
+    sdesc: "Resource P"
+    ldesc: "The sixteenth resource, dependent on O"
     category: example
     requires:
       - o
 
-  - package: q
+  - resource: q
     name: "Q"
-    sdesc: "Package Q"
-    ldesc: "The seventeenth package, dependent on P"
+    sdesc: "Resource Q"
+    ldesc: "The seventeenth resource, dependent on P"
     category: example
     requires:
       - p
 
-  - package: r
+  - resource: r
     name: "R"
-    sdesc: "Package R"
-    ldesc: "The eighteenth package, dependent on Q"
+    sdesc: "Resource R"
+    ldesc: "The eighteenth resource, dependent on Q"
     category: example
     requires:
       - q
 
-  - package: s
+  - resource: s
     name: "S"
-    sdesc: "Package S"
-    ldesc: "The nineteenth package, dependent on R"
+    sdesc: "Resource S"
+    ldesc: "The nineteenth resource, dependent on R"
     category: example
     requires:
       - r
 
-  - package: t
+  - resource: t
     name: "T"
-    sdesc: "Package T"
-    ldesc: "The twentieth package, dependent on S"
+    sdesc: "Resource T"
+    ldesc: "The twentieth resource, dependent on S"
     category: example
     requires:
       - s
 
-  - package: u
+  - resource: u
     name: "U"
-    sdesc: "Package U"
-    ldesc: "The twenty-first package, dependent on T"
+    sdesc: "Resource U"
+    ldesc: "The twenty-first resource, dependent on T"
     category: example
     requires:
       - t
 
-  - package: v
+  - resource: v
     name: "V"
-    sdesc: "Package V"
-    ldesc: "The twenty-second package, dependent on U"
+    sdesc: "Resource V"
+    ldesc: "The twenty-second resource, dependent on U"
     category: example
     requires:
       - u
 
-  - package: w
+  - resource: w
     name: "W"
-    sdesc: "Package W"
-    ldesc: "The twenty-third package, dependent on V"
+    sdesc: "Resource W"
+    ldesc: "The twenty-third resource, dependent on V"
     category: example
     requires:
       - v
 
-  - package: x
+  - resource: x
     name: "X"
-    sdesc: "Package X"
-    ldesc: "The twenty-fourth package, dependent on W"
+    sdesc: "Resource X"
+    ldesc: "The twenty-fourth resource, dependent on W"
     category: example
     requires:
       - w
 
-  - package: y
+  - resource: y
     name: "Y"
-    sdesc: "Package Y"
-    ldesc: "The twenty-fifth package, dependent on X"
+    sdesc: "Resource Y"
+    ldesc: "The twenty-fifth resource, dependent on X"
     category: example
     requires:
       - x
 
-  - package: z
+  - resource: z
     name: "Z"
-    sdesc: "Package Z"
-    ldesc: "The twenty-sixth package, dependent on Y"
+    sdesc: "Resource Z"
+    ldesc: "The twenty-sixth resource, dependent on Y"
     category: example
     requires:
       - y

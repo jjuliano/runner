@@ -49,7 +49,7 @@ func initTestConfig() {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		viper.Set("package_files", []string{"./test_packages.yaml"})
+		viper.Set("resource_files", []string{"./test_resources.yaml"})
 	}
 }
 
@@ -58,28 +58,28 @@ func setupTestResolver() *resolver.DependencyResolver {
 	logger := log.New(nil)
 	resolver := resolver.NewDependencyResolver(fs, logger)
 	yamlData := `
-packages:
-  - package: "pkg1"
-    name: "Package 1"
+resources:
+  - resource: "res1"
+    name: "Resource 1"
     sdesc: "Short description 1"
     ldesc: "Long description 1"
     category: "cat1"
-    requires: ["pkg2"]
-  - package: "pkg2"
-    name: "Package 2"
+    requires: ["res2"]
+  - resource: "res2"
+    name: "Resource 2"
     sdesc: "Short description 2"
     ldesc: "Long description 2"
     category: "cat2"
-    requires: ["pkg3"]
-  - package: "pkg3"
-    name: "Package 3"
+    requires: ["res3"]
+  - resource: "res3"
+    name: "Resource 3"
     sdesc: "Short description 3"
     ldesc: "Long description 3"
     category: "cat3"
     requires: []
 `
-	afero.WriteFile(fs, "./test_packages.yaml", []byte(yamlData), 0644)
-	resolver.LoadPackageEntries("./test_packages.yaml")
+	afero.WriteFile(fs, "./test_resources.yaml", []byte(yamlData), 0644)
+	resolver.LoadResourceEntries("./test_resources.yaml")
 	return resolver
 }
 
@@ -88,14 +88,14 @@ func TestDependsCommand(t *testing.T) {
 	resolver := setupTestResolver()
 	rootCmd := &cobra.Command{Use: "kdeps"}
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "depends [package_names...]",
-		Short: "List dependencies of the given packages",
+		Use:   "depends [resource_names...]",
+		Short: "List dependencies of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleDependsCommand(args)
 		},
 	})
 
-	args := []string{"depends", "pkg1"}
+	args := []string{"depends", "res1"}
 	rootCmd.SetArgs(args)
 
 	output := captureOutput(func() {
@@ -105,7 +105,7 @@ func TestDependsCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "pkg1\npkg1 -> pkg2\npkg1 -> pkg2 -> pkg3\n"
+	expectedOutput := "res1\nres1 -> res2\nres1 -> res2 -> res3\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
@@ -116,14 +116,14 @@ func TestRDependsCommand(t *testing.T) {
 	resolver := setupTestResolver()
 	rootCmd := &cobra.Command{Use: "kdeps"}
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "rdepends [package_names...]",
-		Short: "List reverse dependencies of the given packages",
+		Use:   "rdepends [resource_names...]",
+		Short: "List reverse dependencies of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleRDependsCommand(args)
 		},
 	})
 
-	args := []string{"rdepends", "pkg3"}
+	args := []string{"rdepends", "res3"}
 	rootCmd.SetArgs(args)
 
 	output := captureOutput(func() {
@@ -133,7 +133,7 @@ func TestRDependsCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "pkg3\npkg3 -> pkg2\npkg3 -> pkg2 -> pkg1\n"
+	expectedOutput := "res3\nres3 -> res2\nres3 -> res2 -> res1\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
@@ -144,14 +144,14 @@ func TestShowCommand(t *testing.T) {
 	resolver := setupTestResolver()
 	rootCmd := &cobra.Command{Use: "kdeps"}
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "show [package_names...]",
-		Short: "Show details of the given packages",
+		Use:   "show [resource_names...]",
+		Short: "Show details of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleShowCommand(args)
 		},
 	})
 
-	args := []string{"show", "pkg1"}
+	args := []string{"show", "res1"}
 	rootCmd.SetArgs(args)
 
 	output := captureOutput(func() {
@@ -161,7 +161,7 @@ func TestShowCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "Package: pkg1\nName: Package 1\nShort Description: Short description 1\nLong Description: Long description 1\nCategory: cat1\nRequirements: [pkg2]\n"
+	expectedOutput := "Resource: res1\nName: Resource 1\nShort Description: Short description 1\nLong Description: Long description 1\nCategory: cat1\nRequirements: [res2]\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
@@ -172,14 +172,14 @@ func TestSearchCommand(t *testing.T) {
 	resolver := setupTestResolver()
 	rootCmd := &cobra.Command{Use: "kdeps"}
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "search [package_names...]",
-		Short: "Search for the given packages",
+		Use:   "search [resource_names...]",
+		Short: "Search for the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleSearchCommand(args)
 		},
 	})
 
-	args := []string{"search", "Package 1"}
+	args := []string{"search", "Resource 1"}
 	rootCmd.SetArgs(args)
 
 	output := captureOutput(func() {
@@ -189,7 +189,7 @@ func TestSearchCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "Package: pkg1\nName: Package 1\nShort Description: Short description 1\nLong Description: Long description 1\nCategory: cat1\n"
+	expectedOutput := "Resource: res1\nName: Resource 1\nShort Description: Short description 1\nLong Description: Long description 1\nCategory: cat1\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
@@ -200,8 +200,8 @@ func TestCategoryCommand(t *testing.T) {
 	resolver := setupTestResolver()
 	rootCmd := &cobra.Command{Use: "kdeps"}
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "category [package_names...]",
-		Short: "List categories of the given packages",
+		Use:   "category [resource_names...]",
+		Short: "List categories of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleCategoryCommand(args)
 		},
@@ -217,7 +217,7 @@ func TestCategoryCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "pkg3\n"
+	expectedOutput := "res3\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
@@ -228,14 +228,14 @@ func TestTreeCommand(t *testing.T) {
 	resolver := setupTestResolver()
 	rootCmd := &cobra.Command{Use: "kdeps"}
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "tree [package_names...]",
-		Short: "Show dependency tree of the given packages",
+		Use:   "tree [resource_names...]",
+		Short: "Show dependency tree of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleTreeCommand(args)
 		},
 	})
 
-	args := []string{"tree", "pkg1"}
+	args := []string{"tree", "res1"}
 	rootCmd.SetArgs(args)
 
 	output := captureOutput(func() {
@@ -245,7 +245,7 @@ func TestTreeCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "pkg1 <- pkg2 <- pkg3\n"
+	expectedOutput := "res1 <- res2 <- res3\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
@@ -256,14 +256,14 @@ func TestTreeListCommand(t *testing.T) {
 	resolver := setupTestResolver()
 	rootCmd := &cobra.Command{Use: "kdeps"}
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "tree-list [package_names...]",
-		Short: "Show dependency tree list of the given packages",
+		Use:   "tree-list [resource_names...]",
+		Short: "Show dependency tree list of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleTreeListCommand(args)
 		},
 	})
 
-	args := []string{"tree-list", "pkg1"}
+	args := []string{"tree-list", "res1"}
 	rootCmd.SetArgs(args)
 
 	output := captureOutput(func() {
@@ -273,7 +273,7 @@ func TestTreeListCommand(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "pkg3\npkg2\npkg1\n"
+	expectedOutput := "res3\nres2\nres1\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}

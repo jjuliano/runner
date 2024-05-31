@@ -9,16 +9,16 @@ import (
 
 var testFilePaths = []string{"/test/file1.yaml", "/test/file2.yaml"}
 
-func TestLoadPackageEntries(t *testing.T) {
+func TestLoadResourceEntries(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	logger := log.New(nil)
 	dr := NewDependencyResolver(fs, logger)
 
 	yamlData1 := `
-packages:
-  - package: "testpkg1"
-    name: "Test Package 1"
-    sdesc: "A test package 1"
+resources:
+  - resource: "testres1"
+    name: "Test Resource 1"
+    sdesc: "A test resource 1"
     ldesc: "A longer description 1"
     category: "test"
     requires:
@@ -26,10 +26,10 @@ packages:
       - "dep2"
 `
 	yamlData2 := `
-packages:
-  - package: "testpkg2"
-    name: "Test Package 2"
-    sdesc: "A test package 2"
+resources:
+  - resource: "testres2"
+    name: "Test Resource 2"
+    sdesc: "A test resource 2"
     ldesc: "A longer description 2"
     category: "test"
     requires:
@@ -40,13 +40,13 @@ packages:
 	afero.WriteFile(fs, testFilePaths[1], []byte(yamlData2), 0644)
 
 	for _, filePath := range testFilePaths {
-		dr.LoadPackageEntries(filePath)
+		dr.LoadResourceEntries(filePath)
 	}
 
-	if len(dr.Packages) != 2 {
-		t.Errorf("Expected 2 packages, got %d", len(dr.Packages))
+	if len(dr.Resources) != 2 {
+		t.Errorf("Expected 2 resources, got %d", len(dr.Resources))
 	}
-	if dr.Packages[0].Package != "testpkg1" || dr.Packages[1].Package != "testpkg2" {
-		t.Errorf("Expected packages 'testpkg1' and 'testpkg2', got '%s' and '%s'", dr.Packages[0].Package, dr.Packages[1].Package)
+	if dr.Resources[0].Resource != "testres1" || dr.Resources[1].Resource != "testres2" {
+		t.Errorf("Expected resources 'testres1' and 'testres2', got '%s' and '%s'", dr.Resources[0].Resource, dr.Resources[1].Resource)
 	}
 }

@@ -14,7 +14,7 @@ import (
 
 var (
 	command  string
-	packages []string
+	resources []string
 )
 
 func initConfig() {
@@ -37,67 +37,67 @@ func main() {
 
 	rootCmd := &cobra.Command{
 		Use:   "kdeps",
-		Short: "A package dependency resolver",
+		Short: "A resource dependency resolver",
 	}
 
 	resolver := resolver.NewDependencyResolver(afero.NewOsFs(), logger)
 
-	packageFiles := viper.GetStringSlice("package_files")
-	for _, file := range packageFiles {
-		resolver.LoadPackageEntries(file) // Load package entries from each file
+	resourceFiles := viper.GetStringSlice("resource_files")
+	for _, file := range resourceFiles {
+		resolver.LoadResourceEntries(file) // Load resource entries from each file
 	}
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "depends [package_names...]",
-		Short: "List dependencies of the given packages",
+		Use:   "depends [resource_names...]",
+		Short: "List dependencies of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleDependsCommand(args)
 		},
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "rdepends [package_names...]",
-		Short: "List reverse dependencies of the given packages",
+		Use:   "rdepends [resource_names...]",
+		Short: "List reverse dependencies of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleRDependsCommand(args)
 		},
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "show [package_names...]",
-		Short: "Show details of the given packages",
+		Use:   "show [resource_names...]",
+		Short: "Show details of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleShowCommand(args)
 		},
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "search [package_names...]",
-		Short: "Search for the given packages",
+		Use:   "search [resource_names...]",
+		Short: "Search for the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleSearchCommand(args)
 		},
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "category [package_names...]",
-		Short: "List categories of the given packages",
+		Use:   "category [resource_names...]",
+		Short: "List categories of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleCategoryCommand(args)
 		},
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "tree [package_names...]",
-		Short: "Show dependency tree of the given packages",
+		Use:   "tree [resource_names...]",
+		Short: "Show dependency tree of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleTreeCommand(args)
 		},
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "tree-list [package_names...]",
-		Short: "Show dependency tree list of the given packages",
+		Use:   "tree-list [resource_names...]",
+		Short: "Show dependency tree list of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleTreeListCommand(args)
 		},
@@ -105,15 +105,15 @@ func main() {
 
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "index",
-		Short: "List all package entries",
+		Short: "List all resource entries",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleIndexCommand()
 		},
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use:   "run [package_names...]",
-		Short: "Run the commands for the given packages",
+		Use:   "run [resource_names...]",
+		Short: "Run the commands for the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			resolver.HandleRunCommand(args)
 		},

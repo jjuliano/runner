@@ -7,23 +7,24 @@ import (
 )
 
 type DependencyResolver struct {
-	Fs                  afero.Fs
-	Packages            []PackageEntry
-	packageDependencies map[string][]string
-	dependencyGraph     []string
-	visitedPaths        map[string]bool
-	logger              *log.Logger
-	Graph               *graph.DependencyGraph
+	Fs                   afero.Fs
+	Resources            []ResourceEntry
+	resourceDependencies map[string][]string
+	dependencyGraph      []string
+	visitedPaths         map[string]bool
+	logger               *log.Logger
+	Graph                *graph.DependencyGraph
 }
 
 type RunStep struct {
-	Name   string `yaml:"name"`
-	Exec   string `yaml:"exec"`
-	Expect string `yaml:"expect"`
+	Name   string      `yaml:"name"`
+	Exec   string      `yaml:"exec"`
+	Expect interface{} `yaml:"expect"` // This can be either a string, a number, or a slice of strings/numbers
+	// Expect string `yaml:"expect"`
 }
 
-type PackageEntry struct {
-	Package  string    `yaml:"package"`
+type ResourceEntry struct {
+	Resource string    `yaml:"resource"`
 	Name     string    `yaml:"name"`
 	Sdesc    string    `yaml:"sdesc"`
 	Ldesc    string    `yaml:"ldesc"`
@@ -34,11 +35,11 @@ type PackageEntry struct {
 
 func NewDependencyResolver(fs afero.Fs, logger *log.Logger) *DependencyResolver {
 	dr := &DependencyResolver{
-		Fs:                  fs,
-		packageDependencies: make(map[string][]string),
-		visitedPaths:        make(map[string]bool),
-		logger:              logger,
+		Fs:                   fs,
+		resourceDependencies: make(map[string][]string),
+		visitedPaths:         make(map[string]bool),
+		logger:               logger,
 	}
-	dr.Graph = graph.NewDependencyGraph(fs, logger, dr.packageDependencies)
+	dr.Graph = graph.NewDependencyGraph(fs, logger, dr.resourceDependencies)
 	return dr
 }
