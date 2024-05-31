@@ -42,38 +42,45 @@ func formatLogEntry(entry stepLog) string {
 
 func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 	logs := new(logs)
+	visited := make(map[string]bool)
 
 	for _, resName := range resources {
-		for _, res := range dr.Resources {
-			LogInfo("🔍 Resolving dependency " + res.Resource)
+		stack := dr.Graph.BuildDependencyStack(resName, visited)
 
-			if res.Resource == resName && res.Run != nil {
-				for _, step := range res.Run {
-					if step.Exec != "" {
-						output, exitCode, err := exec.ExecuteCommand(step.Exec)
+		for _, resNode := range stack {
+			for _, res := range dr.Resources {
+				if res.Resource == resNode {
+					LogInfo("🔍 Resolving dependency " + resNode)
+					if res.Run != nil {
 
-						if step.Name != "" {
-							logs.addLogs(stepLog{targetRes: resName, command: step.Exec, res: res.Name, name: step.Name, message: output})
-						}
+						for _, step := range res.Run {
+							if step.Exec != "" {
+								output, exitCode, err := exec.ExecuteCommand(step.Exec)
 
-						if err != nil {
-							return LogError("Error executing command '"+step.Exec+"'", err)
-						}
+								if step.Name != "" {
+									logs.addLogs(stepLog{targetRes: resNode, command: step.Exec, res: res.Name, name: step.Name, message: output})
+								}
 
-						if step.Expect != nil {
-							expectations := expect.ProcessExpectations(step.Expect)
-							if err := expect.CheckExpectations(output, exitCode, expectations); err != nil {
-								return LogError("Expectation check failed for command '"+step.Exec+"'", err)
+								if err != nil {
+									return LogError("Error executing command '"+step.Exec+"'", err)
+								}
+
+								if step.Expect != nil {
+									expectations := expect.ProcessExpectations(step.Expect)
+									if err := expect.CheckExpectations(output, exitCode, expectations); err != nil {
+										return LogError("Expectation check failed for command '"+step.Exec+"'", err)
+									}
+								}
 							}
 						}
 					}
 				}
-			}
 
-			for _, val := range logs.getLogs() {
-				if val.name != "" {
-					formattedLog := formatLogEntry(val)
-					LogInfo("🏃 Running " + val.name + "... " + formattedLog)
+				for _, val := range logs.getLogs() {
+					if val.name != "" {
+						formattedLog := formatLogEntry(val)
+						LogInfo("🏃 Running " + val.name + "... " + formattedLog)
+					}
 				}
 			}
 		}
@@ -141,7 +148,7 @@ func (dr *DependencyResolver) HandleTreeListCommand(resources []string) error {
 
 func (dr *DependencyResolver) HandleIndexCommand() error {
 	for _, entry := range dr.Resources {
-		PrintMessage("📦 Resource: %s\n📛 Name: %s\n📝 Short Description: %s\n📖 Long Description: %s\n🏷️ Category: %s\n🔗 Requirements: %v\n",
+		PrintMessage("📦 Resource: %s\n📛 Name: %s\n📝 Short Description: %s\n📖 Long Description: %s\n🏷️  Category: %s\n🔗 Requirements: %v\n",
 			entry.Resource, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
 		Println("---")
 	}

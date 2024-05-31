@@ -29,7 +29,7 @@ func (dr *DependencyResolver) LoadResourceEntries(filePath string) error {
 func (dr *DependencyResolver) ShowResourceEntry(res string) error {
 	for _, entry := range dr.Resources {
 		if entry.Resource == res {
-			PrintMessage("Resource: %s\nName: %s\nShort Description: %s\nLong Description: %s\nCategory: %s\nRequirements: %v\n",
+			PrintMessage("📦 Resource: %s\n📛 Name: %s\n📝 Short Description: %s\n📖 Long Description: %s\n🏷️  Category: %s\n🔗 Requirements: %v\n",
 				entry.Resource, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
 			return nil
 		}
