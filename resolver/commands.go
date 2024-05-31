@@ -86,7 +86,12 @@ func processElement(init interface{}, client *http.Client) error {
 }
 
 func isValidCheckPrefix(s string) bool {
-	return strings.HasPrefix(s, "ENV:") || strings.HasPrefix(s, "FILE:") || strings.HasPrefix(s, "DIR:") || strings.HasPrefix(s, "URL:") || (strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\""))
+	return strings.HasPrefix(s, "ENV:") ||
+		strings.HasPrefix(s, "FILE:") ||
+		strings.HasPrefix(s, "DIR:") ||
+		strings.HasPrefix(s, "URL:") ||
+		strings.HasPrefix(s, "!") ||
+		(strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\""))
 }
 
 // Execute the command and handle the result
