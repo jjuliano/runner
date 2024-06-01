@@ -98,28 +98,39 @@ func isValidCheckPrefix(s string) bool {
 
 // Execute the command and handle the result
 func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, logChan chan<- stepLog, client *http.Client) error {
-	result := <-exec.ExecuteCommand(step.Exec)
+	LogInfo(fmt.Sprintf("Executing command: %s for resource: %s, step: %s", step.Exec, resName, step.Name))
+	execResultChan := exec.ExecuteCommand(step.Exec)
 
-	if step.Name != "" {
-		logs.addLogs(stepLog{
-			targetRes: resNode,
-			command:   step.Exec,
-			res:       resName,
-			name:      step.Name,
-			message:   result.Output,
-		}, logChan)
+	// Receive result from the channel and check for nil
+	result, ok := <-execResultChan
+	if !ok {
+		return fmt.Errorf("failed to execute command: %s", step.Exec)
 	}
 
+	logEntry := stepLog{
+		targetRes: resNode,
+		command:   step.Exec,
+		res:       resName,
+		name:      step.Name,
+		message:   result.Output,
+	}
+	logs.addLogs(logEntry, logChan)
+
+	LogInfo(fmt.Sprintf("Command executed. Result: %v", result))
+
 	if result.Err != nil {
+		LogError(fmt.Sprintf("Command execution error for %s: %v", step.Name, result.Err), result.Err)
 		return result.Err
 	}
 
 	if step.Expect != nil {
 		expectations := expect.ProcessExpectations(step.Expect)
 		if err := expect.CheckExpectations(result.Output, result.ExitCode, expectations, client); err != nil {
+			LogError(fmt.Sprintf("Expectation check failed for %s: %v", step.Name, err), err)
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -205,6 +216,7 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 
 								// Handle exec steps
 								if step.Exec != "" {
+									LogInfo(fmt.Sprintf("Executing command for resource: %s, step: %s", resNode, step.Name))
 									if err := executeAndLogCommand(step, res.Name, resNode, logs, logChan, client); err != nil {
 										LogError("Error executing command '"+resNode+"' step '"+step.Name+"'", err)
 									}
