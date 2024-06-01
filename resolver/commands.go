@@ -23,9 +23,7 @@ type stepLog struct {
 type logs struct {
 	mu      sync.Mutex
 	entries []stepLog
-	logChan chan stepLog
 	closed  bool
-	wg      sync.WaitGroup // Add a WaitGroup for managing goroutines.
 }
 
 // add adds a new log entry to the logs.
@@ -35,28 +33,15 @@ func (m *logs) add(entry stepLog) {
 	if m.closed {
 		return
 	}
-	fmt.Println("Adding log entry:", entry) // Debug statement
+	fmt.Println(formatLogEntry(entry)) // Use formatLogEntry for structured logging
 	m.entries = append(m.entries, entry)
-	m.wg.Add(1) // Increment the WaitGroup counter
-	go func() {
-		defer m.wg.Done() // Decrement the WaitGroup counter when done
-		select {
-		case m.logChan <- entry:
-		default:
-			fmt.Println("Channel closed, unable to add log entry")
-		}
-	}()
 }
 
-// close closes the log channel after all goroutines are done.
+// close closes the log after all goroutines are done.
 func (m *logs) close() {
-	m.wg.Wait() // Wait for all goroutines to finish
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if !m.closed {
-		close(m.logChan)
-		m.closed = true
-	}
+	m.closed = true
 }
 
 // getAll retrieves all log entries.
@@ -176,22 +161,7 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, cli
 
 // HandleRunCommand handles the 'run' command for the given resources.
 func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
-	logs := &logs{logChan: make(chan stepLog)}
-	var wg sync.WaitGroup
-
-	// Start the log processing goroutine.
-	go func() {
-		for {
-			select {
-			case logEntry := <-logs.logChan:
-				if logEntry.name != "" {
-					formattedLog := formatLogEntry(logEntry)
-					LogInfo(" Running " + logEntry.name + "... " + formattedLog)
-				}
-			}
-		}
-		fmt.Println("Log processing goroutine exited") // Debug statement
-	}()
+	logs := &logs{}
 
 	visited := make(map[string]bool)
 	client := &http.Client{}
@@ -201,19 +171,13 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 		for _, resNode := range stack {
 			for _, res := range dr.Resources {
 				if res.Resource == resNode {
-					wg.Add(1)
-					go func(resNode string, res ResourceEntry) {
-						defer wg.Done()
-						dr.resolveDependency(resNode, res, logs, client)
-					}(resNode, res)
+					dr.resolveDependency(resNode, res, logs, client)
 				}
 			}
 		}
 	}
 
-	// Wait for all goroutines to finish.
-	wg.Wait()
-	// Close the log channel only after all processing is done.
+	// Close the log after all processing is done.
 	logs.close()
 
 	return nil
@@ -226,15 +190,12 @@ func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntr
 		return
 	}
 
-	var wg sync.WaitGroup
 	skipResults := make(map[StepKey]bool)
 	mu := &sync.Mutex{}
 
 	for _, step := range res.Run {
-		wg.Add(1)
-		go dr.processSkipSteps(step, resNode, skipResults, mu, &wg, client)
+		dr.processSkipSteps(step, resNode, skipResults, mu, client)
 	}
-	wg.Wait()
 
 	skip := dr.buildSkipMap(res.Run, resNode, skipResults)
 
@@ -244,8 +205,7 @@ func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntr
 }
 
 // processSkipSteps processes skip steps for a given step.
-func (dr *DependencyResolver) processSkipSteps(step RunStep, resNode string, skipResults map[StepKey]bool, mu *sync.Mutex, wg *sync.WaitGroup, client *http.Client) {
-	defer wg.Done()
+func (dr *DependencyResolver) processSkipSteps(step RunStep, resNode string, skipResults map[StepKey]bool, mu *sync.Mutex, client *http.Client) {
 	if skipSteps, ok := step.Skip.([]interface{}); ok {
 		err := dr.processSteps(skipSteps, "skip", step.Name, client)
 		dr.recordSkipResult(step, resNode, err == nil, skipResults, mu)
