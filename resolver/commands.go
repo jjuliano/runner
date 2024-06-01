@@ -10,6 +10,7 @@ import (
 	"github.com/kdeps/plugins/expect"
 )
 
+// stepLog represents the structure of a log entry for a step.
 type stepLog struct {
 	name      string
 	message   string
@@ -18,13 +19,16 @@ type stepLog struct {
 	targetRes string
 }
 
+// logs manages the logging mechanism with synchronization.
 type logs struct {
 	mu      sync.Mutex
 	entries []stepLog
 	logChan chan stepLog
 	closed  bool
+	wg      sync.WaitGroup // Add a WaitGroup for managing goroutines.
 }
 
+// add adds a new log entry to the logs.
 func (m *logs) add(entry stepLog) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -33,12 +37,20 @@ func (m *logs) add(entry stepLog) {
 	}
 	fmt.Println("Adding log entry:", entry) // Debug statement
 	m.entries = append(m.entries, entry)
+	m.wg.Add(1) // Increment the WaitGroup counter
 	go func() {
-		m.logChan <- entry
+		defer m.wg.Done() // Decrement the WaitGroup counter when done
+		select {
+		case m.logChan <- entry:
+		default:
+			fmt.Println("Channel closed, unable to add log entry")
+		}
 	}()
 }
 
+// close closes the log channel after all goroutines are done.
 func (m *logs) close() {
+	m.wg.Wait() // Wait for all goroutines to finish
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if !m.closed {
@@ -47,6 +59,7 @@ func (m *logs) close() {
 	}
 }
 
+// getAll retrieves all log entries.
 func (m *logs) getAll() []stepLog {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -55,6 +68,7 @@ func (m *logs) getAll() []stepLog {
 	return logEntries
 }
 
+// formatLogEntry formats a log entry into a string.
 func formatLogEntry(entry stepLog) string {
 	return strings.Join([]string{
 		"\n----------------------------------------------------------\n",
@@ -66,6 +80,7 @@ func formatLogEntry(entry stepLog) string {
 	}, "\n")
 }
 
+// processSteps processes each step by executing the relevant checks.
 func (dr *DependencyResolver) processSteps(steps []interface{}, stepType, resNode string, client *http.Client) error {
 	for _, step := range steps {
 		LogInfo(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, step, resNode))
@@ -76,6 +91,7 @@ func (dr *DependencyResolver) processSteps(steps []interface{}, stepType, resNod
 	return nil
 }
 
+// processElement processes an individual step element based on its type.
 func processElement(element interface{}, client *http.Client) error {
 	switch val := element.(type) {
 	case string:
@@ -100,6 +116,7 @@ func processElement(element interface{}, client *http.Client) error {
 	return nil
 }
 
+// checkExpectations checks the expectations in the provided list.
 func checkExpectations(expectations []interface{}, client *http.Client) error {
 	strs := make([]string, len(expectations))
 	for i, v := range expectations {
@@ -112,6 +129,7 @@ func checkExpectations(expectations []interface{}, client *http.Client) error {
 	return expect.CheckExpectations("", 0, strs, client)
 }
 
+// isValidCheckPrefix checks if the string has a valid prefix for checks.
 func isValidCheckPrefix(s string) bool {
 	prefixes := []string{"ENV:", "FILE:", "DIR:", "URL:", "!"}
 	for _, prefix := range prefixes {
@@ -122,6 +140,7 @@ func isValidCheckPrefix(s string) bool {
 	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
 }
 
+// executeAndLogCommand executes the command for a step and logs the result.
 func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, client *http.Client) error {
 	LogInfo(fmt.Sprintf("Executing command: %s for resource: %s, step: %s", step.Exec, resName, step.Name))
 	execResultChan := exec.ExecuteCommand(step.Exec)
@@ -155,16 +174,20 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, cli
 	return nil
 }
 
+// HandleRunCommand handles the 'run' command for the given resources.
 func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 	logs := &logs{logChan: make(chan stepLog)}
 	var wg sync.WaitGroup
 
-	// Start the log processing goroutine
+	// Start the log processing goroutine.
 	go func() {
-		for logEntry := range logs.logChan {
-			if logEntry.name != "" {
-				formattedLog := formatLogEntry(logEntry)
-				LogInfo("🏃 Running " + logEntry.name + "... " + formattedLog)
+		for {
+			select {
+			case logEntry := <-logs.logChan:
+				if logEntry.name != "" {
+					formattedLog := formatLogEntry(logEntry)
+					LogInfo(" Running " + logEntry.name + "... " + formattedLog)
+				}
 			}
 		}
 		fmt.Println("Log processing goroutine exited") // Debug statement
@@ -188,14 +211,15 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 		}
 	}
 
-	// Wait for all goroutines to finish
+	// Wait for all goroutines to finish.
 	wg.Wait()
-	// Close the log channel only after all processing is done
+	// Close the log channel only after all processing is done.
 	logs.close()
 
 	return nil
 }
 
+// resolveDependency resolves the dependency for a given resource node.
 func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntry, logs *logs, client *http.Client) {
 	LogInfo("🔍 Resolving dependency " + resNode)
 	if res.Run == nil {
@@ -219,6 +243,7 @@ func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntr
 	}
 }
 
+// processSkipSteps processes skip steps for a given step.
 func (dr *DependencyResolver) processSkipSteps(step RunStep, resNode string, skipResults map[StepKey]bool, mu *sync.Mutex, wg *sync.WaitGroup, client *http.Client) {
 	defer wg.Done()
 	if skipSteps, ok := step.Skip.([]interface{}); ok {
@@ -229,12 +254,14 @@ func (dr *DependencyResolver) processSkipSteps(step RunStep, resNode string, ski
 	}
 }
 
+// recordSkipResult records the result of a skip step.
 func (dr *DependencyResolver) recordSkipResult(step RunStep, resNode string, result bool, skipResults map[StepKey]bool, mu *sync.Mutex) {
 	mu.Lock()
 	defer mu.Unlock()
 	skipResults[StepKey{name: step.Name, node: resNode}] = result
 }
 
+// buildSkipMap builds a map of skip results.
 func (dr *DependencyResolver) buildSkipMap(steps []RunStep, resNode string, skipResults map[StepKey]bool) map[StepKey]bool {
 	skip := make(map[StepKey]bool)
 	for _, step := range steps {
@@ -243,6 +270,7 @@ func (dr *DependencyResolver) buildSkipMap(steps []RunStep, resNode string, skip
 	return skip
 }
 
+// handleStep handles the execution and logging of a step.
 func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[StepKey]bool, logs *logs, client *http.Client) {
 	skipKey := StepKey{name: step.Name, node: resNode}
 	LogInfo(fmt.Sprintf("Step: %s, Skip: %v", step.Name, skip[skipKey]))
@@ -255,7 +283,7 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 			}
 		}
 
-		// Execute the command and log the result
+		// Execute the command and log the result.
 		err := executeAndLogCommand(step, resNode, resNode, logs, client)
 		if err != nil {
 			LogError("Error executing command for resource '"+resNode+"' step '"+step.Name+"'", err)
@@ -276,6 +304,7 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 	}
 }
 
+// HandleShowCommand handles the 'show' command for the given resources.
 func (dr *DependencyResolver) HandleShowCommand(resources []string) error {
 	for _, res := range resources {
 		if err := dr.ShowResourceEntry(res); err != nil {
@@ -285,6 +314,7 @@ func (dr *DependencyResolver) HandleShowCommand(resources []string) error {
 	return nil
 }
 
+// HandleDependsCommand handles the 'depends' command for the given resources.
 func (dr *DependencyResolver) HandleDependsCommand(resources []string) error {
 	for _, res := range resources {
 		dr.Graph.ListDirectDependencies(res)
@@ -292,6 +322,7 @@ func (dr *DependencyResolver) HandleDependsCommand(resources []string) error {
 	return nil
 }
 
+// HandleRDependsCommand handles the 'rdepends' command for the given resources.
 func (dr *DependencyResolver) HandleRDependsCommand(resources []string) error {
 	for _, res := range resources {
 		dr.Graph.ListReverseDependencies(res)
@@ -299,12 +330,14 @@ func (dr *DependencyResolver) HandleRDependsCommand(resources []string) error {
 	return nil
 }
 
+// HandleSearchCommand handles the 'search' command.
 func (dr *DependencyResolver) HandleSearchCommand(resources []string) error {
 	query := resources[0]
 	keys := resources[1:]
 	return dr.FuzzySearch(query, keys)
 }
 
+// HandleCategoryCommand handles the 'category' command for the given categories.
 func (dr *DependencyResolver) HandleCategoryCommand(resources []string) error {
 	if len(resources) == 0 {
 		Println("Usage: kdeps category [categories...]")
@@ -320,6 +353,7 @@ func (dr *DependencyResolver) HandleCategoryCommand(resources []string) error {
 	return nil
 }
 
+// HandleTreeCommand handles the 'tree' command for the given resources.
 func (dr *DependencyResolver) HandleTreeCommand(resources []string) error {
 	for _, res := range resources {
 		dr.Graph.ListDependencyTree(res)
@@ -327,6 +361,7 @@ func (dr *DependencyResolver) HandleTreeCommand(resources []string) error {
 	return nil
 }
 
+// HandleTreeListCommand handles the 'tree-list' command for the given resources.
 func (dr *DependencyResolver) HandleTreeListCommand(resources []string) error {
 	for _, res := range resources {
 		dr.Graph.ListDependencyTreeTopDown(res)
@@ -334,6 +369,7 @@ func (dr *DependencyResolver) HandleTreeListCommand(resources []string) error {
 	return nil
 }
 
+// HandleIndexCommand handles the 'index' command, listing all resources.
 func (dr *DependencyResolver) HandleIndexCommand() error {
 	for _, entry := range dr.Resources {
 		PrintMessage("📦 Resource: %s\n📛 Name: %s\n📝 Short Description: %s\n📖 Long Description: %s\n🏷️  Category: %s\n🔗 Requirements: %v\n",
