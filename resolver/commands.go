@@ -18,16 +18,40 @@ type stepLog struct {
 	targetRes string
 }
 
-type logs []stepLog
-
-func (m *logs) addLogs(entry stepLog, logChan chan<- stepLog) {
-	*m = append(*m, entry)
-	logChan <- entry
+type logs struct {
+	mu      sync.Mutex
+	entries []stepLog
+	logChan chan stepLog
+	closed  bool
 }
 
-func (m logs) getLogs() []stepLog {
-	logEntries := make([]stepLog, len(m))
-	copy(logEntries, m)
+func (m *logs) add(entry stepLog) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.closed {
+		return
+	}
+	fmt.Println("Adding log entry:", entry) // Debug statement
+	m.entries = append(m.entries, entry)
+	go func() {
+		m.logChan <- entry
+	}()
+}
+
+func (m *logs) close() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if !m.closed {
+		close(m.logChan)
+		m.closed = true
+	}
+}
+
+func (m *logs) getAll() []stepLog {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	logEntries := make([]stepLog, len(m.entries))
+	copy(logEntries, m.entries)
 	return logEntries
 }
 
@@ -98,7 +122,7 @@ func isValidCheckPrefix(s string) bool {
 	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
 }
 
-func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, logChan chan<- stepLog, client *http.Client) error {
+func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, client *http.Client) error {
 	LogInfo(fmt.Sprintf("Executing command: %s for resource: %s, step: %s", step.Exec, resName, step.Name))
 	execResultChan := exec.ExecuteCommand(step.Exec)
 
@@ -106,7 +130,6 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, log
 	if !ok {
 		return fmt.Errorf("failed to execute command: %s", step.Exec)
 	}
-
 	logEntry := stepLog{
 		targetRes: resNode,
 		command:   step.Exec,
@@ -114,9 +137,7 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, log
 		name:      step.Name,
 		message:   result.Output,
 	}
-	logs.addLogs(logEntry, logChan)
-
-	LogInfo(fmt.Sprintf("Command executed. Result: %v", result))
+	logs.add(logEntry)
 
 	if result.Err != nil {
 		LogError(fmt.Sprintf("Command execution error for %s: %v", step.Name, result.Err), result.Err)
@@ -135,35 +156,47 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, log
 }
 
 func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
-	logs := new(logs)
-	visited := make(map[string]bool)
-	client := &http.Client{}
-	logChan := make(chan stepLog)
+	logs := &logs{logChan: make(chan stepLog)}
+	var wg sync.WaitGroup
 
+	// Start the log processing goroutine
 	go func() {
-		for logEntry := range logChan {
+		for logEntry := range logs.logChan {
 			if logEntry.name != "" {
 				formattedLog := formatLogEntry(logEntry)
 				LogInfo("🏃 Running " + logEntry.name + "... " + formattedLog)
 			}
 		}
+		fmt.Println("Log processing goroutine exited") // Debug statement
 	}()
-	defer close(logChan)
+
+	visited := make(map[string]bool)
+	client := &http.Client{}
 
 	for _, resName := range resources {
 		stack := dr.Graph.BuildDependencyStack(resName, visited)
 		for _, resNode := range stack {
 			for _, res := range dr.Resources {
 				if res.Resource == resNode {
-					dr.resolveDependency(resNode, res, logs, logChan, client)
+					wg.Add(1)
+					go func(resNode string, res ResourceEntry) {
+						defer wg.Done()
+						dr.resolveDependency(resNode, res, logs, client)
+					}(resNode, res)
 				}
 			}
 		}
 	}
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+	// Close the log channel only after all processing is done
+	logs.close()
+
 	return nil
 }
 
-func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntry, logs *logs, logChan chan<- stepLog, client *http.Client) {
+func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntry, logs *logs, client *http.Client) {
 	LogInfo("🔍 Resolving dependency " + resNode)
 	if res.Run == nil {
 		return
@@ -182,7 +215,7 @@ func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntr
 	skip := dr.buildSkipMap(res.Run, resNode, skipResults)
 
 	for _, step := range res.Run {
-		dr.handleStep(step, resNode, skip, logs, logChan, client)
+		dr.handleStep(step, resNode, skip, logs, client)
 	}
 }
 
@@ -210,7 +243,7 @@ func (dr *DependencyResolver) buildSkipMap(steps []RunStep, resNode string, skip
 	return skip
 }
 
-func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[StepKey]bool, logs *logs, logChan chan<- stepLog, client *http.Client) {
+func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[StepKey]bool, logs *logs, client *http.Client) {
 	skipKey := StepKey{name: step.Name, node: resNode}
 	LogInfo(fmt.Sprintf("Step: %s, Skip: %v", step.Name, skip[skipKey]))
 
@@ -218,13 +251,26 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 		if checkSteps, ok := step.Check.([]interface{}); ok {
 			if err := dr.processSteps(checkSteps, "check", step.Name, client); err != nil {
 				LogError("Check expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
+				return
 			}
 		}
 
-		if step.Exec != "" {
-			LogInfo(fmt.Sprintf("Executing command for resource: %s, step: %s", resNode, step.Name))
-			if err := executeAndLogCommand(step, resNode, resNode, logs, logChan, client); err != nil {
-				LogError("Error executing command '"+resNode+"' step '"+step.Name+"'", err)
+		// Execute the command and log the result
+		err := executeAndLogCommand(step, resNode, resNode, logs, client)
+		if err != nil {
+			LogError("Error executing command for resource '"+resNode+"' step '"+step.Name+"'", err)
+			return
+		}
+
+		if step.Expect != nil {
+			expectations := expect.ProcessExpectations(step.Expect)
+			result, ok := <-exec.ExecuteCommand(step.Exec)
+			if !ok {
+				LogError("Failed to execute command: "+step.Exec, nil)
+				return
+			}
+			if err := expect.CheckExpectations(result.Output, result.ExitCode, expectations, client); err != nil {
+				LogError("Expectation check failed for resource '"+resNode+"' step '"+step.Name+"'", err)
 			}
 		}
 	}
