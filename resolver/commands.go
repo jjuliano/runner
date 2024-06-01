@@ -33,7 +33,7 @@ func (m *logs) add(entry stepLog) {
 	if m.closed {
 		return
 	}
-	fmt.Println(formatLogEntry(entry)) // Use formatLogEntry for structured logging
+	fmt.Println(formatLogEntry(entry))
 	m.entries = append(m.entries, entry)
 }
 
@@ -68,8 +68,9 @@ func formatLogEntry(entry stepLog) string {
 // processSteps processes each step by executing the relevant checks.
 func (dr *DependencyResolver) processSteps(steps []interface{}, stepType, resNode string, client *http.Client) error {
 	for _, step := range steps {
-		LogInfo(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, step, resNode))
+		LogDebug(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, step, resNode))
 		if err := processElement(step, client); err != nil {
+			LogError(fmt.Sprintf("Error processing step '%v' in '%s' steps: %v", step, stepType, err), err)
 			return err
 		}
 	}
@@ -128,10 +129,11 @@ func isValidCheckPrefix(s string) bool {
 // executeAndLogCommand executes the command for a step and logs the result.
 func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, client *http.Client) error {
 	LogInfo(fmt.Sprintf("Executing command: %s for resource: %s, step: %s", step.Exec, resName, step.Name))
-	execResultChan := exec.ExecuteCommand(step.Exec)
+	execResultChan := exec.ExecuteCommand(step.Exec, true)
 
 	result, ok := <-execResultChan
 	if !ok {
+		LogError(fmt.Sprintf("Failed to execute command: %s", step.Exec), nil)
 		return fmt.Errorf("failed to execute command: %s", step.Exec)
 	}
 	logEntry := stepLog{
@@ -144,15 +146,13 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, cli
 	logs.add(logEntry)
 
 	if result.Err != nil {
-		LogError(fmt.Sprintf("Command execution error for %s: %v", step.Name, result.Err), result.Err)
-		return result.Err
+		return LogError(fmt.Sprintf("Command execution error for %s: %v", step.Name, result.Err), result.Err)
 	}
 
 	if step.Expect != nil {
 		expectations := expect.ProcessExpectations(step.Expect)
 		if err := expect.CheckExpectations(result.Output, result.ExitCode, expectations, client); err != nil {
-			LogError(fmt.Sprintf("Expectation check failed for %s: %v", step.Name, err), err)
-			return err
+			return LogError(fmt.Sprintf("Expectation check failed for %s: %v", step.Name, err), err)
 		}
 	}
 
@@ -187,6 +187,7 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntry, logs *logs, client *http.Client) {
 	LogInfo("🔍 Resolving dependency " + resNode)
 	if res.Run == nil {
+		LogInfo("No run steps found for resource " + resNode)
 		return
 	}
 
@@ -233,7 +234,7 @@ func (dr *DependencyResolver) buildSkipMap(steps []RunStep, resNode string, skip
 // handleStep handles the execution and logging of a step.
 func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[StepKey]bool, logs *logs, client *http.Client) {
 	skipKey := StepKey{name: step.Name, node: resNode}
-	LogInfo(fmt.Sprintf("Step: %s, Skip: %v", step.Name, skip[skipKey]))
+	LogDebug(fmt.Sprintf("Step: %s, Skip: %v", step.Name, skip[skipKey]))
 
 	if !skip[skipKey] {
 		if checkSteps, ok := step.Check.([]interface{}); ok {
@@ -252,7 +253,7 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 
 		if step.Expect != nil {
 			expectations := expect.ProcessExpectations(step.Expect)
-			result, ok := <-exec.ExecuteCommand(step.Exec)
+			result, ok := <-exec.ExecuteCommand(step.Exec, true)
 			if !ok {
 				LogError("Failed to execute command: "+step.Exec, nil)
 				return
@@ -261,6 +262,9 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 				LogError("Expectation check failed for resource '"+resNode+"' step '"+step.Name+"'", err)
 			}
 		}
+	} else {
+		LogInfo(fmt.Sprintf("Skipping '%s' step for resource '%s'...", step.Name, resNode))
+
 	}
 }
 
@@ -277,6 +281,7 @@ func (dr *DependencyResolver) HandleShowCommand(resources []string) error {
 // HandleDependsCommand handles the 'depends' command for the given resources.
 func (dr *DependencyResolver) HandleDependsCommand(resources []string) error {
 	for _, res := range resources {
+		LogDebug("Listing direct dependencies for resource " + res)
 		dr.Graph.ListDirectDependencies(res)
 	}
 	return nil
@@ -285,6 +290,7 @@ func (dr *DependencyResolver) HandleDependsCommand(resources []string) error {
 // HandleRDependsCommand handles the 'rdepends' command for the given resources.
 func (dr *DependencyResolver) HandleRDependsCommand(resources []string) error {
 	for _, res := range resources {
+		LogDebug("Listing reverse dependencies for resource " + res)
 		dr.Graph.ListReverseDependencies(res)
 	}
 	return nil
@@ -294,18 +300,21 @@ func (dr *DependencyResolver) HandleRDependsCommand(resources []string) error {
 func (dr *DependencyResolver) HandleSearchCommand(resources []string) error {
 	query := resources[0]
 	keys := resources[1:]
+	LogDebug("Performing fuzzy search with query: " + query)
 	return dr.FuzzySearch(query, keys)
 }
 
 // HandleCategoryCommand handles the 'category' command for the given categories.
 func (dr *DependencyResolver) HandleCategoryCommand(resources []string) error {
 	if len(resources) == 0 {
+		LogInfo("No categories provided")
 		Println("Usage: kdeps category [categories...]")
 		return nil
 	}
 	for _, entry := range dr.Resources {
 		for _, category := range resources {
 			if entry.Category == category {
+				LogDebug("Listing resource in category: " + category)
 				Println("📂 " + entry.Resource)
 			}
 		}
@@ -316,6 +325,7 @@ func (dr *DependencyResolver) HandleCategoryCommand(resources []string) error {
 // HandleTreeCommand handles the 'tree' command for the given resources.
 func (dr *DependencyResolver) HandleTreeCommand(resources []string) error {
 	for _, res := range resources {
+		LogDebug("Listing dependency tree for resource " + res)
 		dr.Graph.ListDependencyTree(res)
 	}
 	return nil
@@ -324,6 +334,7 @@ func (dr *DependencyResolver) HandleTreeCommand(resources []string) error {
 // HandleTreeListCommand handles the 'tree-list' command for the given resources.
 func (dr *DependencyResolver) HandleTreeListCommand(resources []string) error {
 	for _, res := range resources {
+		LogDebug("Listing top-down dependency tree for resource " + res)
 		dr.Graph.ListDependencyTreeTopDown(res)
 	}
 	return nil
@@ -332,6 +343,7 @@ func (dr *DependencyResolver) HandleTreeListCommand(resources []string) error {
 // HandleIndexCommand handles the 'index' command, listing all resources.
 func (dr *DependencyResolver) HandleIndexCommand() error {
 	for _, entry := range dr.Resources {
+		LogDebug("Indexing resource: " + entry.Resource)
 		PrintMessage("📦 Resource: %s\n📛 Name: %s\n📝 Short Description: %s\n📖 Long Description: %s\n🏷️  Category: %s\n🔗 Requirements: %v\n",
 			entry.Resource, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
 		Println("---")

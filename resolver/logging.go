@@ -21,6 +21,11 @@ func LogInfo(message string) {
 	logger.Info(message)
 }
 
+// LogDebug logs an debugging message
+func LogDebug(message string) {
+	logger.Debug(message)
+}
+
 // PrintMessage prints a formatted message to the standard output
 func PrintMessage(format string, a ...interface{}) {
 	fmt.Printf(format, a...)
