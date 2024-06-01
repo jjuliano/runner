@@ -26,6 +26,11 @@ type RunStep struct {
 	Expect interface{} `yaml:"expect"`
 }
 
+type StepKey struct {
+	name string
+	node string
+}
+
 type ResourceEntry struct {
 	Resource string    `yaml:"resource"`
 	Name     string    `yaml:"name"`
