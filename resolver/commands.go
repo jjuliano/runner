@@ -44,8 +44,9 @@ func formatLogEntry(entry stepLog) string {
 	}, "\n")
 }
 
-func (dr *DependencyResolver) processSteps(initSteps []interface{}, client *http.Client) error {
+func (dr *DependencyResolver) processSteps(initSteps []interface{}, stepType string, resNode string, client *http.Client) error {
 	for _, init := range initSteps {
+		LogInfo(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, init, resNode))
 		if err := processElement(init, client); err != nil {
 			return err
 		}
@@ -122,7 +123,6 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, log
 	return nil
 }
 
-// Main function to handle run commands
 func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 	logs := new(logs)
 	visited := make(map[string]bool)
@@ -140,6 +140,11 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 
 	defer close(logChan) // Ensure the channel is closed when done
 
+	type key struct {
+		name string
+		node string
+	}
+
 	for _, resName := range resources {
 		stack := dr.Graph.BuildDependencyStack(resName, visited)
 		for _, resNode := range stack {
@@ -148,7 +153,8 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 					LogInfo("🔍 Resolving dependency " + resNode)
 					if res.Run != nil {
 						var wg sync.WaitGroup
-						skipResults := make(chan bool, len(res.Run))
+						skipResults := make(map[key]bool)
+						mu := &sync.Mutex{}
 
 						// Handle skip steps with expect
 						for _, step := range res.Run {
@@ -156,45 +162,48 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 							go func(step RunStep) {
 								defer wg.Done()
 								if skipSteps, ok := step.Skip.([]interface{}); ok {
-									if err := dr.processSteps(skipSteps, client); err != nil {
+									if err := dr.processSteps(skipSteps, "skip", step.Name, client); err != nil {
 										LogError("Skip expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
-										skipResults <- false
+										mu.Lock()
+										skipResults[key{name: step.Name, node: resNode}] = false
+										mu.Unlock()
 									} else {
 										LogInfo("Skip step succeeded for resource '" + resNode + "' step '" + step.Name + "'")
-										skipResults <- true
+										mu.Lock()
+										skipResults[key{name: step.Name, node: resNode}] = true
+										mu.Unlock()
 									}
 								} else {
-									skipResults <- false
+									mu.Lock()
+									skipResults[key{name: step.Name, node: resNode}] = false
+									mu.Unlock()
 								}
 							}(step)
 						}
 
 						// Wait for all skip checks to complete
 						wg.Wait()
-						close(skipResults)
 
-						// Determine if any step should be skipped
-						skip := false
-						for result := range skipResults {
-							if result {
-								skip = true
-								break
-							}
+						// Determine if the specific step should be skipped
+						skip := make(map[key]bool)
+						for _, step := range res.Run {
+							skip[key{name: step.Name, node: resNode}] = skipResults[key{name: step.Name, node: resNode}]
 						}
 
 						// Handle the rest of the steps only if not skipped
-						if !skip {
-							// Handle check steps with expect
-							for _, step := range res.Run {
+						for _, step := range res.Run {
+							skipKey := key{name: step.Name, node: resNode}
+							LogInfo(fmt.Sprintf("Step: %s, Skip: %v", step.Name, skip[skipKey]))
+
+							if !skip[skipKey] {
+								// Handle check steps with expect
 								if checkSteps, ok := step.Check.([]interface{}); ok {
-									if err := dr.processSteps(checkSteps, client); err != nil {
+									if err := dr.processSteps(checkSteps, "check", step.Name, client); err != nil {
 										LogError("Check expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
 									}
 								}
-							}
 
-							// Handle exec steps
-							for _, step := range res.Run {
+								// Handle exec steps
 								if step.Exec != "" {
 									if err := executeAndLogCommand(step, res.Name, resNode, logs, logChan, client); err != nil {
 										LogError("Error executing command '"+resNode+"' step '"+step.Name+"'", err)
