@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/kdeps/plugins/exec"
 	"github.com/kdeps/plugins/expect"
@@ -43,7 +44,7 @@ func formatLogEntry(entry stepLog) string {
 	}, "\n")
 }
 
-func (dr *DependencyResolver) processCheckSteps(initSteps []interface{}, client *http.Client) error {
+func (dr *DependencyResolver) processSteps(initSteps []interface{}, client *http.Client) error {
 	for _, init := range initSteps {
 		if err := processElement(init, client); err != nil {
 			return err
@@ -141,26 +142,63 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 
 	for _, resName := range resources {
 		stack := dr.Graph.BuildDependencyStack(resName, visited)
-
 		for _, resNode := range stack {
 			for _, res := range dr.Resources {
 				if res.Resource == resNode {
 					LogInfo("🔍 Resolving dependency " + resNode)
 					if res.Run != nil {
-						// Handle check steps with expect
+						var wg sync.WaitGroup
+						skipResults := make(chan bool, len(res.Run))
+
+						// Handle skip steps with expect
 						for _, step := range res.Run {
-							if checkSteps, ok := step.Check.([]interface{}); ok {
-								if err := dr.processCheckSteps(checkSteps, client); err != nil {
-									return LogError("Check expectation failed for resource '"+resNode+"'", err)
+							wg.Add(1)
+							go func(step RunStep) {
+								defer wg.Done()
+								if skipSteps, ok := step.Skip.([]interface{}); ok {
+									if err := dr.processSteps(skipSteps, client); err != nil {
+										LogError("Skip expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
+										skipResults <- false
+									} else {
+										LogInfo("Skip step succeeded for resource '" + resNode + "' step '" + step.Name + "'")
+										skipResults <- true
+									}
+								} else {
+									skipResults <- false
 								}
+							}(step)
+						}
+
+						// Wait for all skip checks to complete
+						wg.Wait()
+						close(skipResults)
+
+						// Determine if any step should be skipped
+						skip := false
+						for result := range skipResults {
+							if result {
+								skip = true
+								break
 							}
 						}
 
-						// Handle exec steps
-						for _, step := range res.Run {
-							if step.Exec != "" {
-								if err := executeAndLogCommand(step, res.Name, resNode, logs, logChan, client); err != nil {
-									return LogError("Error executing command '"+step.Exec+"'", err)
+						// Handle the rest of the steps only if not skipped
+						if !skip {
+							// Handle check steps with expect
+							for _, step := range res.Run {
+								if checkSteps, ok := step.Check.([]interface{}); ok {
+									if err := dr.processSteps(checkSteps, client); err != nil {
+										LogError("Check expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
+									}
+								}
+							}
+
+							// Handle exec steps
+							for _, step := range res.Run {
+								if step.Exec != "" {
+									if err := executeAndLogCommand(step, res.Name, resNode, logs, logChan, client); err != nil {
+										LogError("Error executing command '"+resNode+"' step '"+step.Name+"'", err)
+									}
 								}
 							}
 						}
