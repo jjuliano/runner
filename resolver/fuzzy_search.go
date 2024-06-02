@@ -34,7 +34,7 @@ func (dr *DependencyResolver) FuzzySearch(query string, keys []string) error {
 
 	matches := fuzzy.Find(query, getSecondStrings(combinedEntries))
 	if len(matches) == 0 {
-		return LogError("No matches found for query: "+query, nil)
+		LogErrorExit("No matches found for query: "+query, nil)
 	}
 
 	for _, match := range matches {

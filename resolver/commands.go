@@ -70,7 +70,7 @@ func (dr *DependencyResolver) processSteps(steps []interface{}, stepType, resNod
 	for _, step := range steps {
 		LogDebug(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, step, resNode))
 		if err := processElement(step, client); err != nil {
-			LogError(fmt.Sprintf("Error processing step '%v' in '%s' steps: %v", step, stepType, err), err)
+			LogErrorExit(fmt.Sprintf("Error processing step '%v' in '%s' steps: %v", step, stepType, err), err)
 			return err
 		}
 	}
@@ -133,7 +133,7 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, cli
 
 	result, ok := <-execResultChan
 	if !ok {
-		LogError(fmt.Sprintf("Failed to execute command: %s", step.Exec), nil)
+		LogErrorExit(fmt.Sprintf("Failed to execute command: %s", step.Exec), nil)
 		return fmt.Errorf("failed to execute command: %s", step.Exec)
 	}
 	logEntry := stepLog{
@@ -146,13 +146,13 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, cli
 	logs.add(logEntry)
 
 	if result.Err != nil {
-		return LogError(fmt.Sprintf("Command execution error for %s: %v", step.Name, result.Err), result.Err)
+		LogErrorExit(fmt.Sprintf("Command execution error for %s: %v", step.Name, result.Err), result.Err)
 	}
 
 	if step.Expect != nil {
 		expectations := expect.ProcessExpectations(step.Expect)
 		if err := expect.CheckExpectations(result.Output, result.ExitCode, expectations, client); err != nil {
-			return LogError(fmt.Sprintf("Expectation check failed for %s: %v", step.Name, err), err)
+			LogErrorExit(fmt.Sprintf("Expectation check failed for %s: %v", step.Name, err), err)
 		}
 	}
 
@@ -239,7 +239,7 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 	if !skip[skipKey] {
 		if checkSteps, ok := step.Check.([]interface{}); ok {
 			if err := dr.processSteps(checkSteps, "check", step.Name, client); err != nil {
-				LogError("Check expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
+				LogErrorExit("Check expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
 				return
 			}
 		}
@@ -247,7 +247,7 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 		// Execute the command and log the result.
 		err := executeAndLogCommand(step, resNode, resNode, logs, client)
 		if err != nil {
-			LogError("Error executing command for resource '"+resNode+"' step '"+step.Name+"'", err)
+			LogErrorExit("Error executing command for resource '"+resNode+"' step '"+step.Name+"'", err)
 			return
 		}
 
@@ -255,11 +255,11 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 			expectations := expect.ProcessExpectations(step.Expect)
 			result, ok := <-exec.ExecuteCommand(step.Exec, true)
 			if !ok {
-				LogError("Failed to execute command: "+step.Exec, nil)
+				LogErrorExit("Failed to execute command: "+step.Exec, nil)
 				return
 			}
 			if err := expect.CheckExpectations(result.Output, result.ExitCode, expectations, client); err != nil {
-				LogError("Expectation check failed for resource '"+resNode+"' step '"+step.Name+"'", err)
+				LogErrorExit("Expectation check failed for resource '"+resNode+"' step '"+step.Name+"'", err)
 			}
 		}
 	} else {
@@ -272,7 +272,7 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 func (dr *DependencyResolver) HandleShowCommand(resources []string) error {
 	for _, res := range resources {
 		if err := dr.ShowResourceEntry(res); err != nil {
-			return LogError("Error showing resource entry "+res, err)
+			LogErrorExit("Error showing resource entry "+res, err)
 		}
 	}
 	return nil

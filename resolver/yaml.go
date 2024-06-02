@@ -8,7 +8,7 @@ import (
 func (dr *DependencyResolver) LoadResourceEntries(filePath string) error {
 	data, err := afero.ReadFile(dr.Fs, filePath)
 	if err != nil {
-		return LogError("Error reading file "+filePath, err)
+		LogErrorExit("Error reading file "+filePath, err)
 	}
 
 	var fileResources struct {
@@ -16,7 +16,7 @@ func (dr *DependencyResolver) LoadResourceEntries(filePath string) error {
 	}
 
 	if err := yaml.Unmarshal(data, &fileResources); err != nil {
-		return LogError("Error unmarshalling YAML data from file "+filePath, err)
+		LogErrorExit("Error unmarshalling YAML data from file "+filePath, err)
 	}
 
 	dr.Resources = append(dr.Resources, fileResources.Resources...)
@@ -34,7 +34,8 @@ func (dr *DependencyResolver) ShowResourceEntry(res string) error {
 			return nil
 		}
 	}
-	return LogError("Resource "+res+" not found", nil)
+	LogErrorExit("Resource "+res+" not found", nil)
+	return nil
 }
 
 func (dr *DependencyResolver) SaveResourceEntries(filePath string) error {
@@ -46,12 +47,12 @@ func (dr *DependencyResolver) SaveResourceEntries(filePath string) error {
 
 	content, err := yaml.Marshal(data)
 	if err != nil {
-		return LogError("Error marshalling YAML", err)
+		LogErrorExit("Error marshalling YAML", err)
 	}
 
 	err = afero.WriteFile(dr.Fs, filePath, content, 0644)
 	if err != nil {
-		return LogError("Error writing file "+filePath, err)
+		LogErrorExit("Error writing file "+filePath, err)
 	}
 	return nil
 }
