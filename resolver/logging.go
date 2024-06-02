@@ -9,10 +9,10 @@ import (
 
 var logger = log.Default()
 
-// LogErrorExit logs an error message and returns the error
+// LogErrorExit logs an error message and exits the program
 func LogErrorExit(message string, err error) {
 	msg := fmt.Sprintf("❌ %s: %s", message, err)
-	logger.Errorf(msg) // log library does not return an error object
+	logger.Errorf(msg)
 	os.Exit(1)
 }
 
@@ -21,7 +21,7 @@ func LogInfo(message string) {
 	logger.Info(message)
 }
 
-// LogDebug logs an debugging message
+// LogDebug logs a debugging message
 func LogDebug(message string) {
 	logger.Debug(message)
 }

@@ -18,7 +18,6 @@ func captureOutput(f func()) string {
 	os.Stdout = w
 
 	outC := make(chan string)
-	// Copy the output in a separate goroutine so that it doesn't block.
 	go func() {
 		var buf bytes.Buffer
 		_, err := io.Copy(&buf, r)
@@ -28,14 +27,9 @@ func captureOutput(f func()) string {
 		outC <- buf.String()
 	}()
 
-	// Execute the function
 	f()
 
-	// Restore the original stdout and close the pipe
-	err = w.Close()
-	if err != nil {
-		PrintError("Error closing pipe", err)
-	}
+	w.Close()
 	os.Stdout = old
 	return <-outC
 }

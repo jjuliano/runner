@@ -70,7 +70,7 @@ func (dr *DependencyResolver) processSteps(steps []interface{}, stepType, resNod
 	for _, step := range steps {
 		LogDebug(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, step, resNode))
 		if err := processElement(step, client); err != nil {
-			LogErrorExit(fmt.Sprintf("Error processing step '%v' in '%s' steps: %v", step, stepType, err), err)
+			LogErrorExit(fmt.Sprintf("Error processing step '%v' in '%s' steps: ", step, stepType), err)
 			return err
 		}
 	}
@@ -93,9 +93,9 @@ func processElement(element interface{}, client *http.Client) error {
 				if isValidCheckPrefix(ev) {
 					return expect.CheckExpectations("", 0, []string{ev}, client)
 				}
-				return fmt.Errorf("unsupported expect value: %v", expectVal)
+				LogErrorExit(fmt.Sprintf("unsupported expect value: '%v'", expectVal), nil)
 			default:
-				return fmt.Errorf("unsupported expect value type: %T", expectVal)
+				LogErrorExit(fmt.Sprintf("unsupported expect value type: '%T'", expectVal), nil)
 			}
 		}
 	}
@@ -128,13 +128,12 @@ func isValidCheckPrefix(s string) bool {
 
 // executeAndLogCommand executes the command for a step and logs the result.
 func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, client *http.Client) error {
-	LogInfo(fmt.Sprintf("Executing command: %s for resource: %s, step: %s", step.Exec, resName, step.Name))
+	LogInfo(fmt.Sprintf("Executing command: '%s' for resource: '%s', step: '%s'", step.Exec, resName, step.Name))
 	execResultChan := exec.ExecuteCommand(step.Exec, true)
 
 	result, ok := <-execResultChan
 	if !ok {
-		LogErrorExit(fmt.Sprintf("Failed to execute command: %s", step.Exec), nil)
-		return fmt.Errorf("failed to execute command: %s", step.Exec)
+		LogErrorExit(fmt.Sprintf("Failed to execute command: '%s'", step.Exec), nil)
 	}
 	logEntry := stepLog{
 		targetRes: resNode,
@@ -146,13 +145,13 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, cli
 	logs.add(logEntry)
 
 	if result.Err != nil {
-		LogErrorExit(fmt.Sprintf("Command execution error for %s: %v", step.Name, result.Err), result.Err)
+		LogErrorExit(fmt.Sprintf("Command execution error for '%s' ", step.Name), result.Err)
 	}
 
 	if step.Expect != nil {
 		expectations := expect.ProcessExpectations(step.Expect)
 		if err := expect.CheckExpectations(result.Output, result.ExitCode, expectations, client); err != nil {
-			LogErrorExit(fmt.Sprintf("Expectation check failed for %s: %v", step.Name, err), err)
+			LogErrorExit(fmt.Sprintf("Expectation check failed for '%s': ", step.Name), err)
 		}
 	}
 
