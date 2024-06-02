@@ -41,6 +41,11 @@ func PrintError(message string, err error) {
 	fmt.Printf("%s: %v\n", message, err)
 }
 
+// LogWarn prints a warning message to the standard output
+func LogWarn(message string) {
+	logger.Warn(message)
+}
+
 // GetLogger returns the logger instance
 func GetLogger() *log.Logger {
 	return logger

@@ -117,7 +117,7 @@ func checkExpectations(expectations []interface{}, client *http.Client) error {
 
 // isValidCheckPrefix checks if the string has a valid prefix for checks.
 func isValidCheckPrefix(s string) bool {
-	prefixes := []string{"ENV:", "FILE:", "DIR:", "URL:", "!"}
+	prefixes := []string{"ENV:", "FILE:", "DIR:", "URL:", "CMD:", "!"}
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(s, prefix) {
 			return true
