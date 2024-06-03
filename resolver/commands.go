@@ -126,15 +126,16 @@ func isValidCheckPrefix(s string) bool {
 	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
 }
 
-// executeAndLogCommand executes the command for a step and logs the result.
+// executeAndLogCommand executes the command for a step and logs the result, supporting interactive input if needed.
 func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, client *http.Client) error {
 	LogInfo(fmt.Sprintf("Executing command: '%s' for resource: '%s', step: '%s'", step.Exec, resName, step.Name))
-	execResultChan := exec.ExecuteCommand(step.Exec, true)
 
-	result, ok := <-execResultChan
-	if !ok {
-		LogErrorExit(fmt.Sprintf("Failed to execute command: '%s'", step.Exec), nil)
-	}
+	var result exec.CommandResult
+	var ok bool
+
+	execResultChan := exec.ExecuteCommandWithInteractiveInput(step.Exec, true, step.Exec)
+	result, ok = <-execResultChan
+
 	logEntry := stepLog{
 		targetRes: resNode,
 		command:   step.Exec,
@@ -143,6 +144,10 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, cli
 		message:   result.Output,
 	}
 	logs.add(logEntry)
+
+	if !ok {
+		LogErrorExit(fmt.Sprintf("Failed to execute command: '%s'", step.Exec), nil)
+	}
 
 	if result.Err != nil {
 		LogErrorExit(fmt.Sprintf("Command execution error for '%s' ", step.Name), result.Err)
