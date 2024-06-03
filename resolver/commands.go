@@ -3,6 +3,7 @@ package resolver
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 
@@ -126,9 +127,38 @@ func isValidCheckPrefix(s string) bool {
 	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
 }
 
+func setEnvironmentVariables(envVars []EnvVar) error {
+	for _, envVar := range envVars {
+		var value string
+		if envVar.Exec != "" {
+			var result exec.CommandResult
+			var ok bool
+
+			execResultChan := exec.ExecuteCommand(envVar.Exec, true)
+			result, ok = <-execResultChan
+
+			if !ok {
+				LogErrorExit(fmt.Sprintf("Failed to set ENV VAR: '%s'", envVar.Exec), nil)
+			}
+			value = result.Output
+		} else {
+			value = envVar.Value
+		}
+		if err := os.Setenv(envVar.Name, value); err != nil {
+			return fmt.Errorf("failed to set environment variable %s: %v", envVar.Name, err)
+		}
+	}
+	return nil
+}
+
 // executeAndLogCommand executes the command for a step and logs the result, supporting interactive input if needed.
 func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, client *http.Client) error {
 	LogInfo(fmt.Sprintf("Executing command: '%s' for resource: '%s', step: '%s'", step.Exec, resName, step.Name))
+
+	// Set environment variables
+	if err := setEnvironmentVariables(step.Env); err != nil {
+		LogErrorExit(fmt.Sprintf("Failed to set environment variables for step: '%s'", step.Name), err)
+	}
 
 	var result exec.CommandResult
 	var ok bool

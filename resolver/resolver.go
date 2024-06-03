@@ -24,6 +24,13 @@ type RunStep struct {
 	Skip   interface{} `yaml:"skip"`
 	Check  interface{} `yaml:"check"`
 	Expect interface{} `yaml:"expect"`
+	Env    []EnvVar    `yaml:"env"`
+}
+
+type EnvVar struct {
+	Name  string `yaml:"name"`
+	Value string `yaml:"value,omitempty"`
+	Exec  string `yaml:"exec,omitempty"`
 }
 
 type StepKey struct {
