@@ -16,6 +16,13 @@ func LogErrorExit(message string, err error) {
 	os.Exit(1)
 }
 
+// LogError logs an error message and returns an error
+func LogError(message string, err error) error {
+	msg := fmt.Sprintf("❌ %s: %s", message, err)
+	logger.Errorf(msg)
+	return fmt.Errorf(msg)
+}
+
 // LogInfo logs an informational message
 func LogInfo(message string) {
 	logger.Info(message)

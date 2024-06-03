@@ -70,7 +70,7 @@ func (dr *DependencyResolver) processSteps(steps []interface{}, stepType, resNod
 	for _, step := range steps {
 		LogDebug(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, step, resNode))
 		if err := processElement(step, client); err != nil {
-			LogErrorExit(fmt.Sprintf("Error processing step '%v' in '%s' steps: ", step, stepType), err)
+			LogError(fmt.Sprintf("Error processing step '%v' in '%s' steps: ", step, stepType), err)
 			return err
 		}
 	}
