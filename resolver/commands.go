@@ -87,17 +87,9 @@ func processElement(element interface{}, client *http.Client) error {
 		}
 	case map[interface{}]interface{}:
 		if expectVal, exists := val["expect"]; exists {
-			switch ev := expectVal.(type) {
-			case []interface{}:
-				return checkExpectations(ev, client)
-			case string:
-				if isValidCheckPrefix(ev) {
-					return expect.CheckExpectations("", 0, []string{ev}, client)
-				}
-				LogErrorExit(fmt.Sprintf("unsupported expect value: '%v'", expectVal), nil)
-			default:
-				LogErrorExit(fmt.Sprintf("unsupported expect value type: '%T'", expectVal), nil)
-			}
+			ev := expectVal.([]interface{})
+			return checkExpectations(ev, client)
+
 		}
 	}
 	return nil
@@ -109,8 +101,6 @@ func checkExpectations(expectations []interface{}, client *http.Client) error {
 	for i, v := range expectations {
 		if s, ok := v.(string); ok {
 			strs[i] = s
-		} else {
-			return fmt.Errorf("unsupported expect value: %v", v)
 		}
 	}
 	return expect.CheckExpectations("", 0, strs, client)
@@ -249,8 +239,18 @@ func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntr
 // processSkipSteps processes skip steps for a given step.
 func (dr *DependencyResolver) processSkipSteps(step RunStep, resNode string, skipResults map[StepKey]bool, mu *sync.Mutex, client *http.Client) {
 	if skipSteps, ok := step.Skip.([]interface{}); ok {
-		err := dr.processSteps(skipSteps, "skip", step.Name, client)
-		dr.recordSkipResult(step, resNode, err == nil, skipResults, mu)
+		validSkipSteps := []interface{}{}
+		for _, skipStep := range skipSteps {
+			if skipStr, ok := skipStep.(string); ok && isValidCheckPrefix(skipStr) {
+				validSkipSteps = append(validSkipSteps, skipStr)
+			}
+		}
+		if len(validSkipSteps) > 0 {
+			err := dr.processSteps(validSkipSteps, "skip", step.Name, client)
+			dr.recordSkipResult(step, resNode, err == nil, skipResults, mu)
+		} else {
+			dr.recordSkipResult(step, resNode, false, skipResults, mu)
+		}
 	} else {
 		dr.recordSkipResult(step, resNode, false, skipResults, mu)
 	}
