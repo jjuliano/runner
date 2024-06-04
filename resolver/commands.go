@@ -152,7 +152,7 @@ func setEnvironmentVariables(envVars []EnvVar) error {
 }
 
 // executeAndLogCommand executes the command for a step and logs the result, supporting interactive input if needed.
-func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, client *http.Client) error {
+func (dr *DependencyResolver) ExecuteAndLogCommand(step RunStep, resName, resNode string, logs *logs, client *http.Client) error {
 	LogInfo(fmt.Sprintf("Executing command: '%s' for resource: '%s', step: '%s'", step.Exec, resName, step.Name))
 
 	// Set environment variables
@@ -183,10 +183,17 @@ func executeAndLogCommand(step RunStep, resName, resNode string, logs *logs, cli
 		LogErrorExit(fmt.Sprintf("Command execution error for '%s' ", step.Name), result.Err)
 	}
 
-	if step.Expect != nil {
-		expectations := expect.ProcessExpectations(step.Expect)
+	if checkSteps, ok := step.Check.([]interface{}); ok {
+		if err := dr.processSteps(checkSteps, "check", step.Name, client); err != nil {
+			LogErrorExit("Check expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
+			return err
+		}
+	}
+
+	if expectSteps, ok := step.Expect.([]interface{}); ok {
+		expectations := expect.ProcessExpectations(expectSteps)
 		if err := expect.CheckExpectations(result.Output, result.ExitCode, expectations, client); err != nil {
-			LogErrorExit(fmt.Sprintf("Expectation check failed for '%s': ", step.Name), err)
+			LogErrorExit(fmt.Sprintf("Expectation failed for '%s': ", step.Name), err)
 		}
 	}
 
@@ -271,34 +278,8 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 	LogDebug(fmt.Sprintf("Step: %s, Skip: %v", step.Name, skip[skipKey]))
 
 	if !skip[skipKey] {
-		if checkSteps, ok := step.Check.([]interface{}); ok {
-			if err := dr.processSteps(checkSteps, "check", step.Name, client); err != nil {
-				LogErrorExit("Check expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
-				return
-			}
-		}
-
 		// Execute the command and log the result.
-		err := executeAndLogCommand(step, resNode, resNode, logs, client)
-		if err != nil {
-			LogErrorExit("Error executing command for resource '"+resNode+"' step '"+step.Name+"'", err)
-			return
-		}
-
-		if step.Expect != nil {
-			expectations := expect.ProcessExpectations(step.Expect)
-			result, ok := <-exec.ExecuteCommand(step.Exec, true)
-			if !ok {
-				LogErrorExit("Failed to execute command: "+step.Exec, nil)
-				return
-			}
-			if err := expect.CheckExpectations(result.Output, result.ExitCode, expectations, client); err != nil {
-				LogErrorExit("Expectation check failed for resource '"+resNode+"' step '"+step.Name+"'", err)
-			}
-		}
-	} else {
-		LogInfo(fmt.Sprintf("Skipping '%s' step for resource '%s'...", step.Name, resNode))
-
+		dr.ExecuteAndLogCommand(step, resNode, resNode, logs, client)
 	}
 }
 

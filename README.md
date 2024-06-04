@@ -6,6 +6,14 @@ The missing package manager for Kubernetes
 - Eliminates Kubernetes GLUE code
 - Automatically resolve dependencies (services, configs or packages)
 - Check if service is running, build, install and check if not
+- Needed to be JAILED env, create a tmpdir, cd into there, run from dot env file from there.
+  - cleanup on exit
+- Target:
+  - Docker Image
+  - K8s
+  - Local
+  - SSH
+  - Shell
 - Expect
 - NotExpect
 - Env (Array)
