@@ -89,7 +89,6 @@ func processElement(element interface{}, client *http.Client) error {
 		if expectVal, exists := val["expect"]; exists {
 			ev := expectVal.([]interface{})
 			return checkExpectations(ev, client)
-
 		}
 	}
 	return nil
@@ -239,28 +238,25 @@ func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntr
 // processSkipSteps processes skip steps for a given step.
 func (dr *DependencyResolver) processSkipSteps(step RunStep, resNode string, skipResults map[StepKey]bool, mu *sync.Mutex, client *http.Client) {
 	if skipSteps, ok := step.Skip.([]interface{}); ok {
-		validSkipSteps := []interface{}{}
 		for _, skipStep := range skipSteps {
 			if skipStr, ok := skipStep.(string); ok && isValidCheckPrefix(skipStr) {
-				validSkipSteps = append(validSkipSteps, skipStr)
+				if err := processElement(skipStr, client); err == nil {
+					mu.Lock()
+					skipResults[StepKey{name: step.Name, node: resNode}] = true
+					mu.Unlock()
+
+					LogDebug(fmt.Sprintf("Skipping step '%s' for node '%s' due to skip condition", step.Name, resNode))
+
+					return
+				}
 			}
 		}
-		if len(validSkipSteps) > 0 {
-			err := dr.processSteps(validSkipSteps, "skip", step.Name, client)
-			dr.recordSkipResult(step, resNode, err == nil, skipResults, mu)
-		} else {
-			dr.recordSkipResult(step, resNode, false, skipResults, mu)
-		}
-	} else {
-		dr.recordSkipResult(step, resNode, false, skipResults, mu)
-	}
-}
+		mu.Lock()
+		skipResults[StepKey{name: step.Name, node: resNode}] = false
+		mu.Unlock()
 
-// recordSkipResult records the result of a skip step.
-func (dr *DependencyResolver) recordSkipResult(step RunStep, resNode string, result bool, skipResults map[StepKey]bool, mu *sync.Mutex) {
-	mu.Lock()
-	defer mu.Unlock()
-	skipResults[StepKey{name: step.Name, node: resNode}] = result
+		LogDebug(fmt.Sprintf("Not skipping step '%s' for node '%s'", step.Name, resNode))
+	}
 }
 
 // buildSkipMap builds a map of skip results.
@@ -275,11 +271,30 @@ func (dr *DependencyResolver) buildSkipMap(steps []RunStep, resNode string, skip
 // handleStep handles the execution and logging of a step.
 func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[StepKey]bool, logs *logs, client *http.Client) {
 	skipKey := StepKey{name: step.Name, node: resNode}
-	LogDebug(fmt.Sprintf("Step: %s, Skip: %v", step.Name, skip[skipKey]))
+	LogDebug(fmt.Sprintf("Skip key '%v' = %v", skipKey, skip[skipKey]))
+	if skip[skipKey] {
+		logs.add(stepLog{targetRes: resNode, command: step.Exec, res: resNode, name: step.Name, message: "Step skipped."})
+		LogInfo("Step: '" + step.Name + "' skipped for resource: '" + resNode + "'")
+		return
+	}
 
-	if !skip[skipKey] {
-		// Execute the command and log the result.
-		dr.ExecuteAndLogCommand(step, resNode, resNode, logs, client)
+	if step.Exec != "" {
+		if err := dr.ExecuteAndLogCommand(step, resNode, resNode, logs, client); err != nil {
+			LogErrorExit(fmt.Sprintf("Execution failed for step '%s' of resource '%s': ", step.Name, resNode), err)
+		}
+	}
+
+	if checkSteps, ok := step.Check.([]interface{}); ok {
+		if err := dr.processSteps(checkSteps, "check", resNode, client); err != nil {
+			LogErrorExit("Check expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
+		}
+	}
+
+	if expectSteps, ok := step.Expect.([]interface{}); ok {
+		expectations := expect.ProcessExpectations(expectSteps)
+		if err := expect.CheckExpectations("", 0, expectations, client); err != nil {
+			LogErrorExit(fmt.Sprintf("Expectation failed for '%s': ", step.Name), err)
+		}
 	}
 }
 

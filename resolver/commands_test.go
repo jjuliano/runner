@@ -194,23 +194,23 @@ func TestProcessSkipSteps(t *testing.T) {
 		{
 			name: "Valid skip step",
 			step: RunStep{
-				Name: "test_step",
-				Skip: []interface{}{"!CMD:validCommand"},
+				Name: "test_step1",
+				Skip: []interface{}{"ENV:HOME"},
 			},
 			expectedSkip: true,
 		},
 		{
 			name: "Invalid skip step",
 			step: RunStep{
-				Name: "test_step",
-				Skip: []interface{}{"invalidCommand"},
+				Name: "test_step2",
+				Skip: []interface{}{"CMD:invalidCommand"},
 			},
 			expectedSkip: false,
 		},
 		{
 			name: "No skip steps",
 			step: RunStep{
-				Name: "test_step",
+				Name: "test_step3",
 				Skip: nil,
 			},
 			expectedSkip: false,
@@ -224,9 +224,13 @@ func TestProcessSkipSteps(t *testing.T) {
 
 			// Check the result
 			skipKey := StepKey{name: tc.step.Name, node: "test_node"}
-			if skipResults[skipKey] != tc.expectedSkip {
-				t.Errorf("Expected skip result for step '%s' to be '%v', got '%v'", tc.step.Name, tc.expectedSkip, skipResults[skipKey])
+			skipResult := skipResults[skipKey]
+			if skipResult != tc.expectedSkip {
+				t.Errorf("Expected skip result for step '%s' to be '%v', got '%v'", tc.step.Name, tc.expectedSkip, skipResult)
 			}
+
+			// Debugging output
+			t.Logf("Skip results for step '%s': expected %v, got %v", tc.step.Name, tc.expectedSkip, skipResult)
 		})
 	}
 }
