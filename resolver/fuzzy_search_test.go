@@ -24,7 +24,7 @@ func (dr *DependencyResolver) MockShowResourceEntry(res string) string {
 // TestDependencyResolver_FuzzySearch tests the FuzzySearch method.
 func TestDependencyResolver_FuzzySearch(t *testing.T) {
 	logger := log.New(nil)
-	resolver, err := NewDependencyResolver(afero.NewMemMapFs(), logger)
+	resolver, err := NewDependencyResolver(afero.NewMemMapFs(), logger, "")
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}

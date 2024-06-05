@@ -16,6 +16,7 @@ type DependencyResolver struct {
 	visitedPaths         map[string]bool
 	logger               *log.Logger
 	Graph                *graph.DependencyGraph
+	WorkDir              string
 }
 
 type RunStep struct {
@@ -48,13 +49,15 @@ type ResourceEntry struct {
 	Run      []RunStep `yaml:"run"`
 }
 
-func NewDependencyResolver(fs afero.Fs, logger *log.Logger) (*DependencyResolver, error) {
+func NewDependencyResolver(fs afero.Fs, logger *log.Logger, workDir string) (*DependencyResolver, error) {
 	dr := &DependencyResolver{
 		Fs:                   fs,
 		resourceDependencies: make(map[string][]string),
 		visitedPaths:         make(map[string]bool),
 		logger:               logger,
+		WorkDir:              workDir,
 	}
+
 	dr.Graph = graph.NewDependencyGraph(fs, logger, dr.resourceDependencies)
 	if dr.Graph == nil {
 		return nil, fmt.Errorf("failed to initialize dependency graph")

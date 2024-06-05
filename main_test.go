@@ -56,7 +56,7 @@ func initTestConfig() {
 func setupTestResolver() *resolver.DependencyResolver {
 	fs := afero.NewMemMapFs()
 	logger := log.New(nil)
-	resolver, err := resolver.NewDependencyResolver(fs, logger)
+	resolver, err := resolver.NewDependencyResolver(fs, logger, "")
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}

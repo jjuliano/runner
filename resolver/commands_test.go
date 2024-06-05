@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -44,8 +45,23 @@ func initTestConfig(fs afero.Fs) {
 
 func setupTestRunResolver() *DependencyResolver {
 	fs = afero.NewMemMapFs()
+
+	workDir, teardown := setup()
+	defer teardown()
+
+	// Write environment variables to .kdeps_env file
+	envFilePath := filepath.Join(workDir, ".kdeps_env")
+	if err := writeEnvToFile(envFilePath); err != nil {
+		logger.Fatalf("Failed to write environment variables to file: %v", err)
+	}
+
+	// Source the .kdeps_env file
+	if err := sourceEnvFile(envFilePath); err != nil {
+		logger.Fatalf("Failed to source environment file: %v", err)
+	}
+
 	logger := log.New(nil)
-	resolver, err := NewDependencyResolver(fs, logger)
+	resolver, err := NewDependencyResolver(fs, logger, workDir)
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}

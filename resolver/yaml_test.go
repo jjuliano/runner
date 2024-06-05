@@ -12,7 +12,7 @@ var testFilePaths = []string{"/test/file1.yaml", "/test/file2.yaml"}
 func TestLoadResourceEntries(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	logger := log.New(nil)
-	dr, err := NewDependencyResolver(fs, logger)
+	dr, err := NewDependencyResolver(fs, logger, "")
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}
@@ -57,7 +57,7 @@ resources:
 func TestLoadResourceEntries_CircularDependency(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	logger := log.New(nil)
-	dr, err := NewDependencyResolver(fs, logger)
+	dr, err := NewDependencyResolver(fs, logger, "")
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}

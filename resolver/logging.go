@@ -30,7 +30,7 @@ func LogInfo(message string) {
 
 // LogDebug logs a debugging message
 func LogDebug(message string) {
-	logger.Debug(message)
+	logger.Warn(message)
 }
 
 // PrintMessage prints a formatted message to the standard output

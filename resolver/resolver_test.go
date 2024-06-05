@@ -14,7 +14,7 @@ import (
 func setupTestResolver() *DependencyResolver {
 	fs := afero.NewMemMapFs() // Using an in-memory filesystem for testing
 	logger := log.New(nil)
-	resolver, err := NewDependencyResolver(fs, logger)
+	resolver, err := NewDependencyResolver(fs, logger, "")
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}
