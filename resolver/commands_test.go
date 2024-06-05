@@ -111,7 +111,7 @@ func TestProcessSteps(t *testing.T) {
 	client := &http.Client{}
 
 	// Call the function being tested
-	err := resolver.processSteps(steps, "sampleType", "sampleResNode", client)
+	err := resolver.processSteps(steps, "sampleType", "sampleResNode", client, &logs{})
 
 	// Check if there were any errors returned
 	if err != nil {
@@ -145,7 +145,7 @@ func TestProcessElement(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Execute the function with the test case input
-			err := processElement(tc.element, httpClient)
+			err := processElement(tc.element, httpClient, &logs{})
 
 			// Check if the error matches the expected error
 			if (err == nil && tc.expectedErr != nil) || (err != nil && tc.expectedErr == nil) || (err != nil && tc.expectedErr != nil && err.Error() != tc.expectedErr.Error()) {
@@ -159,7 +159,7 @@ func TestProcessElement_String(t *testing.T) {
 	client := &http.Client{}
 	expectedPrefix := "ENV:HELLO"
 
-	err := processElement(expectedPrefix, client)
+	err := processElement(expectedPrefix, client, &logs{})
 	expectedError := "expected environment variable 'HELLO' does not exist"
 	if err.Error() != expectedError {
 		t.Errorf("Expected error: %s, got: %v", expectedError, err)
@@ -170,7 +170,7 @@ func TestProcessElement_Map(t *testing.T) {
 	client := &http.Client{}
 	expectedExpectations := []interface{}{"unfound value"}
 
-	err := processElement(map[interface{}]interface{}{"expect": expectedExpectations}, client)
+	err := processElement(map[interface{}]interface{}{"expect": expectedExpectations}, client, &logs{})
 	expectedError := "expected 'unfound value' not found in output"
 	if err.Error() != expectedError {
 		t.Errorf("Expected error: %s, got: %v", expectedError, err)
@@ -220,7 +220,7 @@ func TestProcessSkipSteps(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Process skip steps
-			resolver.processSkipSteps(tc.step, "test_node", skipResults, mu, client)
+			resolver.processSkipSteps(tc.step, "test_node", skipResults, mu, client, &logs{})
 
 			// Check the result
 			skipKey := StepKey{name: tc.step.Name, node: "test_node"}
@@ -260,6 +260,13 @@ func TestAddLogEntry(t *testing.T) {
 	// Check if the first entry in the entries slice is equal to the sample log entry
 	if logs.entries[0] != entry {
 		t.Errorf("Expected logs.Entries[0] to be equal to entry, but got %+v", logs.entries[0])
+	}
+
+	// Check if the log messages are correctly retrieved as a single string
+	messages := logs.getAllMessageString()
+	expectedMessage := "This is a test message"
+	if messages != expectedMessage {
+		t.Errorf("Expected message '%s', got '%s'", expectedMessage, messages)
 	}
 
 }

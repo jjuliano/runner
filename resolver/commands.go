@@ -54,6 +54,22 @@ func (m *logs) getAll() []stepLog {
 	return logEntries
 }
 
+// getAllMessages retrieves all log messages as a slice of strings.
+func (m *logs) getAllMessages() []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	messages := make([]string, len(m.entries))
+	for i, entry := range m.entries {
+		messages[i] = entry.message
+	}
+	return messages
+}
+
+// getAllMessageString retrieves all log messages as a string.
+func (m *logs) getAllMessageString() string {
+	return strings.Join(m.getAllMessages(), "\n")
+}
+
 // formatLogEntry formats a log entry into a string.
 func formatLogEntry(entry stepLog) string {
 	return strings.Join([]string{
@@ -67,10 +83,10 @@ func formatLogEntry(entry stepLog) string {
 }
 
 // processSteps processes each step by executing the relevant checks.
-func (dr *DependencyResolver) processSteps(steps []interface{}, stepType, resNode string, client *http.Client) error {
+func (dr *DependencyResolver) processSteps(steps []interface{}, stepType, resNode string, client *http.Client, logs *logs) error {
 	for _, step := range steps {
 		LogDebug(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, step, resNode))
-		if err := processElement(step, client); err != nil {
+		if err := processElement(step, client, logs); err != nil {
 			LogError(fmt.Sprintf("Error processing step '%v' in '%s' steps: ", step, stepType), err)
 			return err
 		}
@@ -79,30 +95,34 @@ func (dr *DependencyResolver) processSteps(steps []interface{}, stepType, resNod
 }
 
 // processElement processes an individual step element based on its type.
-func processElement(element interface{}, client *http.Client) error {
+func processElement(element interface{}, client *http.Client, logs *logs) error {
 	switch val := element.(type) {
 	case string:
 		if isValidCheckPrefix(val) {
-			return expect.CheckExpectations("", 0, []string{val}, client)
+			return expect.CheckExpectations(logs.getAllMessageString(), 0, []string{val}, client)
+		} else {
+			LogDebug(fmt.Sprintf("Skipping check condition '%s' unsupported.", val))
 		}
 	case map[interface{}]interface{}:
 		if expectVal, exists := val["expect"]; exists {
 			ev := expectVal.([]interface{})
-			return checkExpectations(ev, client)
+			return checkExpectationsArray(ev, client, logs)
 		}
+	default:
+		LogErrorExit(fmt.Sprintf("Unsupported Step: %v", val), nil)
 	}
 	return nil
 }
 
-// checkExpectations checks the expectations in the provided list.
-func checkExpectations(expectations []interface{}, client *http.Client) error {
+// CheckExpectationsArray checks the expectations in the provided list.
+func checkExpectationsArray(expectations []interface{}, client *http.Client, logs *logs) error {
 	strs := make([]string, len(expectations))
 	for i, v := range expectations {
 		if s, ok := v.(string); ok {
 			strs[i] = s
 		}
 	}
-	return expect.CheckExpectations("", 0, strs, client)
+	return expect.CheckExpectations(logs.getAllMessageString(), 0, strs, client)
 }
 
 // isValidCheckPrefix checks if the string has a valid prefix for checks.
@@ -172,20 +192,6 @@ func (dr *DependencyResolver) ExecuteAndLogCommand(step RunStep, resName, resNod
 		LogErrorExit(fmt.Sprintf("Command execution error for '%s' ", step.Name), result.Err)
 	}
 
-	if checkSteps, ok := step.Check.([]interface{}); ok {
-		if err := dr.processSteps(checkSteps, "check", step.Name, client); err != nil {
-			LogErrorExit("Check expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
-			return err
-		}
-	}
-
-	if expectSteps, ok := step.Expect.([]interface{}); ok {
-		expectations := expect.ProcessExpectations(expectSteps)
-		if err := expect.CheckExpectations(result.Output, result.ExitCode, expectations, client); err != nil {
-			LogErrorExit(fmt.Sprintf("Expectation failed for '%s': ", step.Name), err)
-		}
-	}
-
 	return nil
 }
 
@@ -225,7 +231,7 @@ func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntr
 	mu := &sync.Mutex{}
 
 	for _, step := range res.Run {
-		dr.processSkipSteps(step, resNode, skipResults, mu, client)
+		dr.processSkipSteps(step, resNode, skipResults, mu, client, logs)
 	}
 
 	skip := dr.buildSkipMap(res.Run, resNode, skipResults)
@@ -236,11 +242,11 @@ func (dr *DependencyResolver) resolveDependency(resNode string, res ResourceEntr
 }
 
 // processSkipSteps processes skip steps for a given step.
-func (dr *DependencyResolver) processSkipSteps(step RunStep, resNode string, skipResults map[StepKey]bool, mu *sync.Mutex, client *http.Client) {
+func (dr *DependencyResolver) processSkipSteps(step RunStep, resNode string, skipResults map[StepKey]bool, mu *sync.Mutex, client *http.Client, logs *logs) {
 	if skipSteps, ok := step.Skip.([]interface{}); ok {
 		for _, skipStep := range skipSteps {
 			if skipStr, ok := skipStep.(string); ok && isValidCheckPrefix(skipStr) {
-				if err := processElement(skipStr, client); err == nil {
+				if err := processElement(skipStr, client, logs); err == nil {
 					mu.Lock()
 					skipResults[StepKey{name: step.Name, node: resNode}] = true
 					mu.Unlock()
@@ -272,6 +278,7 @@ func (dr *DependencyResolver) buildSkipMap(steps []RunStep, resNode string, skip
 func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[StepKey]bool, logs *logs, client *http.Client) {
 	skipKey := StepKey{name: step.Name, node: resNode}
 	LogDebug(fmt.Sprintf("Skip key '%v' = %v", skipKey, skip[skipKey]))
+
 	if skip[skipKey] {
 		logs.add(stepLog{targetRes: resNode, command: step.Exec, res: resNode, name: step.Name, message: "Step skipped."})
 		LogInfo("Step: '" + step.Name + "' skipped for resource: '" + resNode + "'")
@@ -285,14 +292,14 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 	}
 
 	if checkSteps, ok := step.Check.([]interface{}); ok {
-		if err := dr.processSteps(checkSteps, "check", resNode, client); err != nil {
+		if err := dr.processSteps(checkSteps, "check", resNode, client, logs); err != nil {
 			LogErrorExit("Check expectation failed for resource '"+resNode+"' step '"+step.Name+"'", err)
 		}
 	}
 
 	if expectSteps, ok := step.Expect.([]interface{}); ok {
 		expectations := expect.ProcessExpectations(expectSteps)
-		if err := expect.CheckExpectations("", 0, expectations, client); err != nil {
+		if err := expect.CheckExpectations(logs.getAllMessageString(), 0, expectations, client); err != nil {
 			LogErrorExit(fmt.Sprintf("Expectation failed for '%s': ", step.Name), err)
 		}
 	}
