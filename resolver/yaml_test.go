@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/log"
+	"github.com/kdeps/plugins/kdepexec"
 	"github.com/spf13/afero"
 )
 
@@ -12,7 +13,12 @@ var testFilePaths = []string{"/test/file1.yaml", "/test/file2.yaml"}
 func TestLoadResourceEntries(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	logger := log.New(nil)
-	dr, err := NewDependencyResolver(fs, logger, "")
+	session, err := kdepexec.NewShellSession()
+	if err != nil {
+		logger.Fatalf("Failed to create shell session: %v", err)
+	}
+	defer session.Close()
+	dr, err := NewDependencyResolver(fs, logger, "", session)
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}
@@ -57,7 +63,12 @@ resources:
 func TestLoadResourceEntries_CircularDependency(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	logger := log.New(nil)
-	dr, err := NewDependencyResolver(fs, logger, "")
+	session, err := kdepexec.NewShellSession()
+	if err != nil {
+		logger.Fatalf("Failed to create shell session: %v", err)
+	}
+	defer session.Close()
+	dr, err := NewDependencyResolver(fs, logger, "", session)
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}

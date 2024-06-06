@@ -5,7 +5,7 @@ go 1.22.3
 require (
 	github.com/charmbracelet/log v0.4.0
 	github.com/kdeps/kartographer v0.0.0-20240531104651-e3e41827da17
-	github.com/kdeps/plugins v0.0.0-20240603002929-d36324f2b294
+	github.com/kdeps/plugins v0.0.0-20240606104751-122504374bbf
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.0

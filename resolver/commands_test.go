@@ -1,7 +1,6 @@
 package resolver
 
 import (
-	"bytes"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/log"
+	"github.com/kdeps/plugins/kdepexec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -17,15 +17,6 @@ import (
 )
 
 var fs afero.Fs
-
-func executeCommand(root *cobra.Command, args ...string) (output string, err error) {
-	buf := new(bytes.Buffer)
-	root.SetOut(buf)
-	root.SetArgs(args)
-
-	_, err = root.ExecuteC()
-	return buf.String(), err
-}
 
 func initTestConfig(fs afero.Fs) {
 	configMap := map[string]interface{}{
@@ -61,7 +52,13 @@ func setupTestRunResolver() *DependencyResolver {
 	}
 
 	logger := log.New(nil)
-	resolver, err := NewDependencyResolver(fs, logger, workDir)
+	session, err := kdepexec.NewShellSession()
+	if err != nil {
+		logger.Fatalf("Failed to create shell session: %v", err)
+	}
+	defer session.Close()
+
+	resolver, err := NewDependencyResolver(fs, logger, workDir, session)
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}
@@ -77,13 +74,13 @@ func setupTestRunResolver() *DependencyResolver {
 				"requires": []interface{}{},
 				"run": []map[string]interface{}{
 					{
-						"name": "install homebrew",
-						"exec": "echo $HELLO",
-						"skip": []string{"CMD:bre1w"},
+						"name":     "install homebrew",
+						"kdepexec": "echo $HELLO",
+						"skip":     []string{"CMD:bre1w"},
 						"env": []map[string]interface{}{
 							{
-								"name": "HELLO",
-								"exec": "echo 'hello world'",
+								"name":     "HELLO",
+								"kdepexec": "echo 'hello world'",
 							},
 							{
 								"name":  "HELLO2",
@@ -92,10 +89,10 @@ func setupTestRunResolver() *DependencyResolver {
 						},
 					},
 					{
-						"name":   "test envvar",
-						"exec":   "echo $HELLO2",
-						"check":  []string{"ENV:HELLO2"},
-						"expect": []string{"HELLO 2", "ENV:HELLO2", "CMD:brew"},
+						"name":     "test envvar",
+						"kdepexec": "echo $HELLO2",
+						"check":    []string{"ENV:HELLO2"},
+						"expect":   []string{"HELLO 2", "ENV:HELLO2", "CMD:brew"},
 					},
 				},
 			},
@@ -341,7 +338,7 @@ func TestHandleRunCommand(t *testing.T) {
 		output := captureOutput(func() {
 			err := rootCmd.Execute()
 			if err != nil {
-				t.Fatalf("Failed to execute command: %v", err)
+				t.Fatalf("Failed to kdepexecute command: %v", err)
 			}
 		})
 
@@ -357,7 +354,7 @@ func TestHandleRunCommand(t *testing.T) {
 		output := captureOutput(func() {
 			err := rootCmd.Execute()
 			if err != nil {
-				t.Fatalf("Failed to execute command: %v", err)
+				t.Fatalf("Failed to kdepexecute command: %v", err)
 			}
 		})
 
@@ -374,7 +371,7 @@ func TestHandleRunCommand(t *testing.T) {
 		output := captureOutput(func() {
 			err := rootCmd.Execute()
 			if err != nil {
-				t.Fatalf("Failed to execute command: %v", err)
+				t.Fatalf("Failed to kdepexecute command: %v", err)
 			}
 		})
 
@@ -394,7 +391,7 @@ func TestHandleRunCommand(t *testing.T) {
 		output := captureOutput(func() {
 			err := rootCmd.Execute()
 			if err != nil {
-				t.Fatalf("Failed to execute command: %v", err)
+				t.Fatalf("Failed to kdepexecute command: %v", err)
 			}
 		})
 
@@ -414,7 +411,7 @@ func TestHandleRunCommand(t *testing.T) {
 		output := captureOutput(func() {
 			err := rootCmd.Execute()
 			if err != nil {
-				t.Fatalf("Failed to execute command: %v", err)
+				t.Fatalf("Failed to kdepexecute command: %v", err)
 			}
 		})
 

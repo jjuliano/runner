@@ -1,14 +1,15 @@
 package resolver
 
 import (
+	"bufio"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 
-	"github.com/kdeps/plugins/exec"
 	"github.com/kdeps/plugins/expect"
+	"github.com/kdeps/plugins/kdepexec"
 )
 
 // stepLog represents the structure of a log entry for a step.
@@ -82,6 +83,34 @@ func formatLogEntry(entry stepLog) string {
 	}, "\n")
 }
 
+func SourceEnvFile(envFilePath string) error {
+	file, err := os.Open(envFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to open env file: %v", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid environment variable declaration: %s", line)
+		}
+		key := parts[0]
+		value := strings.Trim(parts[1], "\"")
+		if err := os.Setenv(key, value); err != nil {
+			return fmt.Errorf("failed to set environment variable %s: %v", key, err)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading env file: %v", err)
+	}
+
+	return nil
+}
+
 // processSteps processes each step by executing the relevant checks.
 func (dr *DependencyResolver) processSteps(steps []interface{}, stepType, resNode string, client *http.Client, logs *logs) error {
 	for _, step := range steps {
@@ -136,15 +165,15 @@ func isValidCheckPrefix(s string) bool {
 	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
 }
 
-func setEnvironmentVariables(envVars []EnvVar) error {
+func (dr *DependencyResolver) SetEnvironmentVariables(envVars []EnvVar) error {
 	for _, envVar := range envVars {
 		var value string
 		if envVar.Exec != "" {
-			var result exec.CommandResult
+			var result kdepexec.CommandResult
 			var ok bool
 
-			execResultChan := exec.ExecuteCommand(envVar.Exec, true)
-			result, ok = <-execResultChan
+			resultChan := dr.ShellSession.ExecuteCommand(envVar.Exec)
+			result, ok = <-resultChan
 
 			if !ok {
 				LogErrorExit(fmt.Sprintf("Failed to set ENV VAR: '%s'", envVar.Exec), nil)
@@ -160,21 +189,19 @@ func setEnvironmentVariables(envVars []EnvVar) error {
 	return nil
 }
 
-// executeAndLogCommand executes the command for a step and logs the result, supporting interactive input if needed.
 func (dr *DependencyResolver) ExecuteAndLogCommand(step RunStep, resName, resNode string, logs *logs, client *http.Client) error {
 	LogInfo(fmt.Sprintf("Executing command: '%s' for resource: '%s', step: '%s'", step.Exec, resName, step.Name))
 
 	// Set environment variables
-	if err := setEnvironmentVariables(step.Env); err != nil {
+	if err := dr.SetEnvironmentVariables(step.Env); err != nil {
 		LogErrorExit(fmt.Sprintf("Failed to set environment variables for step: '%s'", step.Name), err)
 	}
 
-	var result exec.CommandResult
+	var result kdepexec.CommandResult
 	var ok bool
 
-	execResultChan := exec.ExecuteCommandWithInteractiveInput(step.Exec, true, step.Exec)
+	execResultChan := dr.ShellSession.ExecuteCommand(step.Exec)
 	result, ok = <-execResultChan
-
 	logEntry := stepLog{
 		targetRes: resNode,
 		command:   step.Exec,
@@ -274,7 +301,7 @@ func (dr *DependencyResolver) buildSkipMap(steps []RunStep, resNode string, skip
 	return skip
 }
 
-// handleStep handles the execution and logging of a step.
+// handleStep handles the kdepexecution and logging of a step.
 func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[StepKey]bool, logs *logs, client *http.Client) {
 	skipKey := StepKey{name: step.Name, node: resNode}
 	LogDebug(fmt.Sprintf("Skip key '%v' = %v", skipKey, skip[skipKey]))
@@ -298,6 +325,10 @@ func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[
 	}
 
 	if expectSteps, ok := step.Expect.([]interface{}); ok {
+		if err := SourceEnvFile(os.Getenv("KDEPS_ENV")); err != nil {
+			LogErrorExit(fmt.Sprintf("Failed to source environment file for step: '%s'", step.Name), err)
+		}
+
 		expectations := expect.ProcessExpectations(expectSteps)
 		if err := expect.CheckExpectations(logs.getAllMessageString(), 0, expectations, client); err != nil {
 			LogErrorExit(fmt.Sprintf("Expectation failed for '%s': ", step.Name), err)

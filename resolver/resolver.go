@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/log"
 	graph "github.com/kdeps/kartographer/graph"
+	"github.com/kdeps/plugins/kdepexec"
 	"github.com/spf13/afero"
 )
 
@@ -17,6 +18,7 @@ type DependencyResolver struct {
 	logger               *log.Logger
 	Graph                *graph.DependencyGraph
 	WorkDir              string
+	ShellSession         *kdepexec.ShellSession
 }
 
 type RunStep struct {
@@ -49,13 +51,14 @@ type ResourceEntry struct {
 	Run      []RunStep `yaml:"run"`
 }
 
-func NewDependencyResolver(fs afero.Fs, logger *log.Logger, workDir string) (*DependencyResolver, error) {
+func NewDependencyResolver(fs afero.Fs, logger *log.Logger, workDir string, shellSession *kdepexec.ShellSession) (*DependencyResolver, error) {
 	dr := &DependencyResolver{
 		Fs:                   fs,
 		resourceDependencies: make(map[string][]string),
 		visitedPaths:         make(map[string]bool),
 		logger:               logger,
 		WorkDir:              workDir,
+		ShellSession:         shellSession,
 	}
 
 	dr.Graph = graph.NewDependencyGraph(fs, logger, dr.resourceDependencies)

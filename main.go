@@ -13,6 +13,7 @@ import (
 	"kdeps/resolver"
 
 	"github.com/charmbracelet/log"
+	"github.com/kdeps/plugins/kdepexec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -203,7 +204,6 @@ func main() {
 		logger.Fatalf("Failed to create work directory: %v", err)
 	}
 
-	// Set up signal handling to clean up on interruption
 	cleanup := func() {
 		if err := os.RemoveAll(workDir); err != nil {
 			logger.Errorf("Failed to remove work directory: %v", err)
@@ -228,11 +228,17 @@ func main() {
 		logger.Fatalf("Failed to write environment variables to file: %v", err)
 	}
 
-	if err := sourceEnvFile(envFilePath); err != nil {
+	if err := resolver.SourceEnvFile(envFilePath); err != nil {
 		logger.Fatalf("Failed to source environment file: %v", err)
 	}
 
-	dependencyResolver, err := resolver.NewDependencyResolver(afero.NewOsFs(), logger, workDir)
+	session, err := kdepexec.NewShellSession()
+	if err != nil {
+		logger.Fatalf("Failed to create shell session: %v", err)
+	}
+	defer session.Close()
+
+	dependencyResolver, err := resolver.NewDependencyResolver(afero.NewOsFs(), logger, workDir, session)
 	if err != nil {
 		logger.Fatalf("Failed to create dependency resolver: %v", err)
 	}

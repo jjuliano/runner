@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/log"
+	"github.com/kdeps/plugins/kdepexec"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/spf13/afero"
 )
@@ -24,7 +25,12 @@ func (dr *DependencyResolver) MockShowResourceEntry(res string) string {
 // TestDependencyResolver_FuzzySearch tests the FuzzySearch method.
 func TestDependencyResolver_FuzzySearch(t *testing.T) {
 	logger := log.New(nil)
-	resolver, err := NewDependencyResolver(afero.NewMemMapFs(), logger, "")
+	session, err := kdepexec.NewShellSession()
+	if err != nil {
+		logger.Fatalf("Failed to create shell session: %v", err)
+	}
+	defer session.Close()
+	resolver, err := NewDependencyResolver(afero.NewMemMapFs(), logger, "", session)
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}
