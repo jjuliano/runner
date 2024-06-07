@@ -34,6 +34,7 @@ type EnvVar struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value,omitempty"`
 	Exec  string `yaml:"exec,omitempty"`
+	Input string `yaml:"input,omitempty"`
 }
 
 type StepKey struct {

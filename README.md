@@ -17,6 +17,10 @@ The missing package manager for Kubernetes
 - Expect
 - NotExpect
 - Env (Array)
+- Env supports
+  - Exec
+  - (soon) INPUT
+  - Name / Value
 - TargetEnv (Key)
 - Linter to check YAML files
 - If GIT is provided, clone and CD into the repository

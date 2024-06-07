@@ -168,6 +168,7 @@ func isValidCheckPrefix(s string) bool {
 func (dr *DependencyResolver) SetEnvironmentVariables(envVars []EnvVar) error {
 	for _, envVar := range envVars {
 		var value string
+
 		if envVar.Exec != "" {
 			var result kdepexec.CommandResult
 			var ok bool
@@ -179,11 +180,19 @@ func (dr *DependencyResolver) SetEnvironmentVariables(envVars []EnvVar) error {
 				LogErrorExit(fmt.Sprintf("Failed to set ENV VAR: '%s'", envVar.Exec), nil)
 			}
 			value = result.Output
+		} else if envVar.Input != "" {
+			fmt.Print(envVar.Input + ": ")
+
+			_, err := fmt.Scanln(&value)
+			if err != nil {
+				LogErrorExit(fmt.Sprintf("Failed to read input for environment variable %s: ", envVar.Name), err)
+			}
 		} else {
 			value = envVar.Value
 		}
+
 		if err := os.Setenv(envVar.Name, value); err != nil {
-			return fmt.Errorf("failed to set environment variable %s: %v", envVar.Name, err)
+			LogErrorExit(fmt.Sprintf("Failed to set environment variable %s: ", envVar.Name), err)
 		}
 	}
 	return nil
