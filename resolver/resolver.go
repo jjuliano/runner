@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/log"
-	graph "github.com/kdeps/kartographer/graph"
+	"github.com/kdeps/kartographer/graph"
 	"github.com/kdeps/plugins/kdepexec"
 	"github.com/spf13/afero"
 )
@@ -12,10 +12,10 @@ import (
 type DependencyResolver struct {
 	Fs                   afero.Fs
 	Resources            []ResourceEntry
-	resourceDependencies map[string][]string
-	dependencyGraph      []string
-	visitedPaths         map[string]bool
-	logger               *log.Logger
+	ResourceDependencies map[string][]string
+	DependencyGraph      []string
+	VisitedPaths         map[string]bool
+	Logger               *log.Logger
 	Graph                *graph.DependencyGraph
 	WorkDir              string
 	ShellSession         *kdepexec.ShellSession
@@ -43,10 +43,9 @@ type StepKey struct {
 }
 
 type ResourceEntry struct {
-	Resource string    `yaml:"resource"`
+	Id       string    `yaml:"id"`
 	Name     string    `yaml:"name"`
-	Sdesc    string    `yaml:"sdesc"`
-	Ldesc    string    `yaml:"ldesc"`
+	Desc     string    `yaml:"desc"`
 	Category string    `yaml:"category"`
 	Requires []string  `yaml:"requires"`
 	Run      []RunStep `yaml:"run"`
@@ -55,14 +54,14 @@ type ResourceEntry struct {
 func NewDependencyResolver(fs afero.Fs, logger *log.Logger, workDir string, shellSession *kdepexec.ShellSession) (*DependencyResolver, error) {
 	dr := &DependencyResolver{
 		Fs:                   fs,
-		resourceDependencies: make(map[string][]string),
-		visitedPaths:         make(map[string]bool),
-		logger:               logger,
+		ResourceDependencies: make(map[string][]string),
+		VisitedPaths:         make(map[string]bool),
+		Logger:               logger,
 		WorkDir:              workDir,
 		ShellSession:         shellSession,
 	}
 
-	dr.Graph = graph.NewDependencyGraph(fs, logger, dr.resourceDependencies)
+	dr.Graph = graph.NewDependencyGraph(fs, logger, dr.ResourceDependencies)
 	if dr.Graph == nil {
 		return nil, fmt.Errorf("failed to initialize dependency graph")
 	}

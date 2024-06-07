@@ -17,6 +17,7 @@ test:
 build:
 	@echo "Building project..."
 	@go build -o $(PROJECT_NAME)
+	@chmod a+x $(PROJECT_NAME)
 
 # Clean up generated files
 clean:

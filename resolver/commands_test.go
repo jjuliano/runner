@@ -14,22 +14,6 @@ import (
 
 var fs afero.Fs
 
-func initTestConfig(fs afero.Fs) {
-	configMap := map[string]interface{}{
-		"resource_files": []string{"./test_resources.yaml"},
-	}
-
-	yamlData, err := yaml.Marshal(configMap)
-	if err != nil {
-		log.Fatalf("Error marshalling config data: %v", err)
-	}
-
-	err = afero.WriteFile(fs, "kdeps.yaml", yamlData, 0644)
-	if err != nil {
-		log.Fatalf("Error writing config file: %v", err)
-	}
-}
-
 func setupTestRunResolver() *DependencyResolver {
 	fs = afero.NewMemMapFs()
 
@@ -62,10 +46,9 @@ func setupTestRunResolver() *DependencyResolver {
 	yamlMap := map[string]interface{}{
 		"resources": []map[string]interface{}{
 			{
-				"resource": "homebrew",
+				"id":       "homebrew",
 				"name":     "Homebrew",
-				"sdesc":    "Homebrew Package Manager",
-				"ldesc":    "Homebrew is a package manager for macOS.",
+				"desc":     "Homebrew Package Manager",
 				"category": "development",
 				"requires": []interface{}{},
 				"run": []map[string]interface{}{
@@ -252,7 +235,7 @@ func TestAddLogEntry(t *testing.T) {
 	entry := stepLog{
 		name:    "test_step",
 		message: "This is a test message",
-		res:     "test_resource",
+		id:      "test_resource",
 		command: "echo hello world",
 	}
 

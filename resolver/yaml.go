@@ -21,20 +21,20 @@ func (dr *DependencyResolver) LoadResourceEntries(filePath string) error {
 
 	dr.Resources = append(dr.Resources, fileResources.Resources...)
 	for _, entry := range fileResources.Resources {
-		dr.resourceDependencies[entry.Resource] = entry.Requires
+		dr.ResourceDependencies[entry.Id] = entry.Requires
 	}
 	return nil
 }
 
 func (dr *DependencyResolver) ShowResourceEntry(res string) error {
 	for _, entry := range dr.Resources {
-		if entry.Resource == res {
-			PrintMessage("📦 Resource: %s\n📛 Name: %s\n📝 Short Description: %s\n📖 Long Description: %s\n🏷️  Category: %s\n🔗 Requirements: %v\n",
-				entry.Resource, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
+		if entry.Id == res {
+			PrintMessage("📦 Id: %s\n📛 Name: %s\n📝 Description: %s\n🏷️  Category: %s\n🔗 Requirements: %v\n",
+				entry.Id, entry.Name, entry.Desc, entry.Category, entry.Requires)
 			return nil
 		}
 	}
-	LogErrorExit("Resource "+res+" not found", nil)
+	LogErrorExit("Id "+res+" not found", nil)
 	return nil
 }
 

@@ -25,10 +25,9 @@ func TestLoadResourceEntries(t *testing.T) {
 
 	yamlData1 := `
 resources:
-  - resource: "testres1"
-    name: "Test Resource 1"
-    sdesc: "A test resource 1"
-    ldesc: "A longer description 1"
+  - id: "testres1"
+    name: "Test Id 1"
+    desc: "A longer description 1"
     category: "test"
     requires:
       - "dep1"
@@ -36,10 +35,9 @@ resources:
 `
 	yamlData2 := `
 resources:
-  - resource: "testres2"
-    name: "Test Resource 2"
-    sdesc: "A test resource 2"
-    ldesc: "A longer description 2"
+  - id: "testres2"
+    name: "Test Id 2"
+    desc: "A longer description 2"
     category: "test"
     requires:
       - "dep3"
@@ -55,8 +53,8 @@ resources:
 	if len(dr.Resources) != 2 {
 		t.Errorf("Expected 2 resources, got %d", len(dr.Resources))
 	}
-	if dr.Resources[0].Resource != "testres1" || dr.Resources[1].Resource != "testres2" {
-		t.Errorf("Expected resources 'testres1' and 'testres2', got '%s' and '%s'", dr.Resources[0].Resource, dr.Resources[1].Resource)
+	if dr.Resources[0].Id != "testres1" || dr.Resources[1].Id != "testres2" {
+		t.Errorf("Expected resources 'testres1' and 'testres2', got '%s' and '%s'", dr.Resources[0].Id, dr.Resources[1].Id)
 	}
 }
 
@@ -75,24 +73,21 @@ func TestLoadResourceEntries_CircularDependency(t *testing.T) {
 
 	yamlData := `
 resources:
-  - resource: "a"
-    name: "Resource A"
-    sdesc: "Short description A"
-    ldesc: "Long description A"
+  - id: "a"
+    name: "Id A"
+    desc: "Long description A"
     category: "test"
     requires:
       - "c"
-  - resource: "b"
-    name: "Resource B"
-    sdesc: "Short description B"
-    ldesc: "Long description B"
+  - id: "b"
+    name: "Id B"
+    desc: "Long description B"
     category: "test"
     requires:
       - "a"
-  - resource: "c"
-    name: "Resource C"
-    sdesc: "Short description C"
-    ldesc: "Long description C"
+  - id: "c"
+    name: "Id C"
+    desc: "Long description C"
     category: "test"
     requires:
       - "b"
@@ -106,8 +101,8 @@ resources:
 
 	expectedResources := []string{"a", "b", "c"}
 	for i, res := range expectedResources {
-		if dr.Resources[i].Resource != res {
-			t.Errorf("Expected resource %s, got %s", res, dr.Resources[i].Resource)
+		if dr.Resources[i].Id != res {
+			t.Errorf("Expected resource %s, got %s", res, dr.Resources[i].Id)
 		}
 	}
 }

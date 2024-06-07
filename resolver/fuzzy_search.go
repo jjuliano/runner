@@ -9,7 +9,7 @@ import (
 func (dr *DependencyResolver) FuzzySearch(query string, keys []string) error {
 	if len(keys) == 0 {
 		// If no keys are provided, search in all fields
-		keys = []string{"resource", "name", "sdesc", "ldesc", "category"}
+		keys = []string{"id", "name", "desc", "category"}
 	}
 
 	combinedEntries := make([][2]string, len(dr.Resources))
@@ -17,19 +17,17 @@ func (dr *DependencyResolver) FuzzySearch(query string, keys []string) error {
 		var combined strings.Builder
 		for _, key := range keys {
 			switch key {
-			case "resource":
-				combined.WriteString(entry.Resource + " ")
+			case "id":
+				combined.WriteString(entry.Id + " ")
 			case "name":
 				combined.WriteString(entry.Name + " ")
-			case "sdesc":
-				combined.WriteString(entry.Sdesc + " ")
-			case "ldesc":
-				combined.WriteString(entry.Ldesc + " ")
+			case "desc":
+				combined.WriteString(entry.Desc + " ")
 			case "category":
 				combined.WriteString(entry.Category + " ")
 			}
 		}
-		combinedEntries[i] = [2]string{entry.Resource, combined.String()}
+		combinedEntries[i] = [2]string{entry.Id, combined.String()}
 	}
 
 	matches := fuzzy.Find(query, getSecondStrings(combinedEntries))
@@ -40,7 +38,10 @@ func (dr *DependencyResolver) FuzzySearch(query string, keys []string) error {
 	for _, match := range matches {
 		for _, entry := range combinedEntries {
 			if entry[1] == match {
-				dr.ShowResourceEntry(entry[0])
+				err := dr.ShowResourceEntry(entry[0])
+				if err != nil {
+					LogErrorExit("Failed to show resource entry: "+entry[0], err)
+				}
 				Println("---")
 				break
 			}

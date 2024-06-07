@@ -53,7 +53,7 @@ func LogWarn(message string) {
 	logger.Warn(message)
 }
 
-// GetLogger returns the logger instance
+// GetLogger returns the Logger instance
 func GetLogger() *log.Logger {
 	return logger
 }

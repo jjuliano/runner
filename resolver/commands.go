@@ -16,7 +16,7 @@ import (
 type stepLog struct {
 	name      string
 	message   string
-	res       string
+	id        string
 	command   string
 	targetRes string
 }
@@ -75,7 +75,7 @@ func (m *logs) getAllMessageString() string {
 func formatLogEntry(entry stepLog) string {
 	return strings.Join([]string{
 		"\n----------------------------------------------------------\n",
-		"📦 Resource: " + entry.res,
+		"📦 Id: " + entry.id,
 		"🔄 Step: " + entry.name,
 		"💻 Command: " + entry.command,
 		"\n" + entry.message,
@@ -88,7 +88,12 @@ func SourceEnvFile(envFilePath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open env file: %v", err)
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			LogErrorExit("failed to close env file: %v", err)
+		}
+	}(file)
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -116,8 +121,7 @@ func (dr *DependencyResolver) processSteps(steps []interface{}, stepType, resNod
 	for _, step := range steps {
 		LogDebug(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, step, resNode))
 		if err := processElement(step, client, logs); err != nil {
-			LogError(fmt.Sprintf("Error processing step '%v' in '%s' steps: ", step, stepType), err)
-			return err
+			return LogError(fmt.Sprintf("Error processing step '%v' in '%s' steps: ", step, stepType), err)
 		}
 	}
 	return nil
@@ -198,7 +202,7 @@ func (dr *DependencyResolver) SetEnvironmentVariables(envVars []EnvVar) error {
 	return nil
 }
 
-func (dr *DependencyResolver) ExecuteAndLogCommand(step RunStep, resName, resNode string, logs *logs, client *http.Client) error {
+func (dr *DependencyResolver) ExecuteAndLogCommand(step RunStep, resName string, resNode string, logs *logs) error {
 	LogInfo(fmt.Sprintf("Executing command: '%s' for resource: '%s', step: '%s'", step.Exec, resName, step.Name))
 
 	// Set environment variables
@@ -214,7 +218,7 @@ func (dr *DependencyResolver) ExecuteAndLogCommand(step RunStep, resName, resNod
 	logEntry := stepLog{
 		targetRes: resNode,
 		command:   step.Exec,
-		res:       resName,
+		id:        resName,
 		name:      step.Name,
 		message:   result.Output,
 	}
@@ -242,7 +246,7 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 		stack := dr.Graph.BuildDependencyStack(resName, visited)
 		for _, resNode := range stack {
 			for _, res := range dr.Resources {
-				if res.Resource == resNode {
+				if res.Id == resNode {
 					dr.resolveDependency(resNode, res, logs, client)
 				}
 			}
@@ -310,19 +314,19 @@ func (dr *DependencyResolver) buildSkipMap(steps []RunStep, resNode string, skip
 	return skip
 }
 
-// handleStep handles the kdepexecution and logging of a step.
+// handleStep handles the execution and logging of a step.
 func (dr *DependencyResolver) handleStep(step RunStep, resNode string, skip map[StepKey]bool, logs *logs, client *http.Client) {
 	skipKey := StepKey{name: step.Name, node: resNode}
 	LogDebug(fmt.Sprintf("Skip key '%v' = %v", skipKey, skip[skipKey]))
 
 	if skip[skipKey] {
-		logs.add(stepLog{targetRes: resNode, command: step.Exec, res: resNode, name: step.Name, message: "Step skipped."})
+		logs.add(stepLog{targetRes: resNode, command: step.Exec, id: resNode, name: step.Name, message: "Step skipped."})
 		LogInfo("Step: '" + step.Name + "' skipped for resource: '" + resNode + "'")
 		return
 	}
 
 	if step.Exec != "" {
-		if err := dr.ExecuteAndLogCommand(step, resNode, resNode, logs, client); err != nil {
+		if err := dr.ExecuteAndLogCommand(step, resNode, resNode, logs); err != nil {
 			LogErrorExit(fmt.Sprintf("Execution failed for step '%s' of resource '%s': ", step.Name, resNode), err)
 		}
 	}
@@ -392,7 +396,7 @@ func (dr *DependencyResolver) HandleCategoryCommand(resources []string) error {
 		for _, category := range resources {
 			if entry.Category == category {
 				LogDebug("Listing resource in category: " + category)
-				Println("📂 " + entry.Resource)
+				Println("📂 " + entry.Id)
 			}
 		}
 	}
@@ -420,9 +424,9 @@ func (dr *DependencyResolver) HandleTreeListCommand(resources []string) error {
 // HandleIndexCommand handles the 'index' command, listing all resources.
 func (dr *DependencyResolver) HandleIndexCommand() error {
 	for _, entry := range dr.Resources {
-		LogDebug("Indexing resource: " + entry.Resource)
-		PrintMessage("📦 Resource: %s\n📛 Name: %s\n📝 Short Description: %s\n📖 Long Description: %s\n🏷️  Category: %s\n🔗 Requirements: %v\n",
-			entry.Resource, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category, entry.Requires)
+		LogDebug("Indexing resource: " + entry.Id)
+		PrintMessage("📦 Id: %s\n📛 Name: %s\n📝 Description: %s\n🏷️  Category: %s\n🔗 Requirements: %v\n",
+			entry.Id, entry.Name, entry.Desc, entry.Category, entry.Requires)
 		Println("---")
 	}
 	return nil

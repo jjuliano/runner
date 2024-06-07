@@ -54,35 +54,32 @@ func setupTestResolver() *resolver.DependencyResolver {
 	}
 	defer session.Close()
 
-	resolver, err := resolver.NewDependencyResolver(fs, logger, "", session)
+	dependencyResolver, err := resolver.NewDependencyResolver(fs, logger, "", session)
 	if err != nil {
-		log.Fatalf("Failed to create dependency resolver: %v", err)
+		log.Fatalf("Failed to create dependency dependencyResolver: %v", err)
 	}
 
 	yamlData := `
 resources:
-  - resource: "res1"
-    name: "Resource 1"
-    sdesc: "Short description 1"
-    ldesc: "Long description 1"
+  - id: "res1"
+    name: "Id 1"
+    desc: "Long description 1"
     category: "cat1"
     requires: ["res2"]
-  - resource: "res2"
-    name: "Resource 2"
-    sdesc: "Short description 2"
-    ldesc: "Long description 2"
+  - id: "res2"
+    name: "Id 2"
+    desc: "Long description 2"
     category: "cat2"
     requires: ["res3"]
-  - resource: "res3"
-    name: "Resource 3"
-    sdesc: "Short description 3"
-    ldesc: "Long description 3"
+  - id: "res3"
+    name: "Id 3"
+    desc: "Long description 3"
     category: "cat3"
     requires: []
 `
 	afero.WriteFile(fs, "./test_resources.yaml", []byte(yamlData), 0644)
-	resolver.LoadResourceEntries("./test_resources.yaml")
-	return resolver
+	dependencyResolver.LoadResourceEntries("./test_resources.yaml")
+	return dependencyResolver
 }
 
 func TestDependsCommand(t *testing.T) {
@@ -103,7 +100,7 @@ func TestDependsCommand(t *testing.T) {
 	output := captureOutput(func() {
 		err := rootCmd.Execute()
 		if err != nil {
-			t.Fatalf("Failed to kdepexecute command: %v", err)
+			t.Fatalf("Failed to execute command: %v", err)
 		}
 	})
 
@@ -131,7 +128,7 @@ func TestRDependsCommand(t *testing.T) {
 	output := captureOutput(func() {
 		err := rootCmd.Execute()
 		if err != nil {
-			t.Fatalf("Failed to kdepexecute command: %v", err)
+			t.Fatalf("Failed to execute command: %v", err)
 		}
 	})
 
@@ -159,11 +156,11 @@ func TestShowCommand(t *testing.T) {
 	output := captureOutput(func() {
 		err := rootCmd.Execute()
 		if err != nil {
-			t.Fatalf("Failed to kdepexecute command: %v", err)
+			t.Fatalf("Failed to execute command: %v", err)
 		}
 	})
 
-	expectedOutput := "📦 Resource: res1\n📛 Name: Resource 1\n📝 Short Description: Short description 1\n📖 Long Description: Long description 1\n🏷️  Category: cat1\n🔗 Requirements: [res2]\n"
+	expectedOutput := "📦 Id: res1\n📛 Name: Id 1\n📝 Description: Long description 1\n🏷️  Category: cat1\n🔗 Requirements: [res2]\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
@@ -181,17 +178,17 @@ func TestSearchCommand(t *testing.T) {
 		},
 	})
 
-	args := []string{"search", "Resource 1"}
+	args := []string{"search", "Id 1"}
 	rootCmd.SetArgs(args)
 
 	output := captureOutput(func() {
 		err := rootCmd.Execute()
 		if err != nil {
-			t.Fatalf("Failed to kdepexecute command: %v", err)
+			t.Fatalf("Failed to execute command: %v", err)
 		}
 	})
 
-	expectedOutput := "📦 Resource: res1\n📛 Name: Resource 1\n📝 Short Description: Short description 1\n📖 Long Description: Long description 1\n🏷️  Category: cat1\n🔗 Requirements: [res2]\n"
+	expectedOutput := "📦 Id: res1\n📛 Name: Id 1\n📝 Description: Long description 1\n🏷️  Category: cat1\n🔗 Requirements: [res2]\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
@@ -215,7 +212,7 @@ func TestCategoryCommand(t *testing.T) {
 	output := captureOutput(func() {
 		err := rootCmd.Execute()
 		if err != nil {
-			t.Fatalf("Failed to kdepexecute command: %v", err)
+			t.Fatalf("Failed to execute command: %v", err)
 		}
 	})
 
@@ -243,7 +240,7 @@ func TestTreeCommand(t *testing.T) {
 	output := captureOutput(func() {
 		err := rootCmd.Execute()
 		if err != nil {
-			t.Fatalf("Failed to kdepexecute command: %v", err)
+			t.Fatalf("Failed to execute command: %v", err)
 		}
 	})
 
@@ -271,7 +268,7 @@ func TestTreeListCommand(t *testing.T) {
 	output := captureOutput(func() {
 		err := rootCmd.Execute()
 		if err != nil {
-			t.Fatalf("Failed to kdepexecute command: %v", err)
+			t.Fatalf("Failed to execute command: %v", err)
 		}
 	})
 
@@ -299,7 +296,7 @@ func TestDependsCommand_CircularDependency(t *testing.T) {
 	output := captureOutput(func() {
 		err := rootCmd.Execute()
 		if err != nil {
-			t.Fatalf("Failed to kdepexecute command: %v", err)
+			t.Fatalf("Failed to execute command: %v", err)
 		}
 	})
 

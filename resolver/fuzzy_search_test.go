@@ -14,9 +14,9 @@ import (
 // MockShowResourceEntry is a mock function to replace ShowResourceEntry for testing purposes.
 func (dr *DependencyResolver) MockShowResourceEntry(res string) string {
 	for _, entry := range dr.Resources {
-		if entry.Resource == res {
-			return fmt.Sprintf("ResourceEntry{Resource:%s Name:%s Sdesc:%s Ldesc:%s Category:%s}\n",
-				entry.Resource, entry.Name, entry.Sdesc, entry.Ldesc, entry.Category)
+		if entry.Id == res {
+			return fmt.Sprintf("ResourceEntry{Id:%s Name:%s Desc:%s Category:%s}\n",
+				entry.Id, entry.Name, entry.Desc, entry.Category)
 		}
 	}
 	return ""
@@ -36,10 +36,9 @@ func TestDependencyResolver_FuzzySearch(t *testing.T) {
 	}
 
 	resolver.Resources = []ResourceEntry{
-		{Resource: "a", Name: "A", Sdesc: "Resource A", Ldesc: "The first resource in the alphabetical order", Category: "example"},
-		{Resource: "b", Name: "B", Sdesc: "Resource B", Ldesc: "The second resource, dependent on A", Category: "example"},
-		{Resource: "c", Name: "C", Sdesc: "Resource C", Ldesc: "The third resource, dependent on B", Category: "example"},
-		// Add more resources as needed for the test
+		{Id: "a", Name: "A", Desc: "The first resource in the alphabetical order", Category: "example"},
+		{Id: "b", Name: "B", Desc: "The second resource, dependent on A", Category: "example"},
+		{Id: "c", Name: "C", Desc: "The third resource, dependent on B", Category: "example"},
 	}
 
 	// Modify FuzzySearch temporarily within the test to return matched resources
@@ -49,19 +48,17 @@ func TestDependencyResolver_FuzzySearch(t *testing.T) {
 			var combined strings.Builder
 			for _, key := range keys {
 				switch key {
-				case "resource":
-					combined.WriteString(entry.Resource + " ")
+				case "id":
+					combined.WriteString(entry.Id + " ")
 				case "name":
 					combined.WriteString(entry.Name + " ")
-				case "sdesc":
-					combined.WriteString(entry.Sdesc + " ")
-				case "ldesc":
-					combined.WriteString(entry.Ldesc + " ")
+				case "desc":
+					combined.WriteString(entry.Desc + " ")
 				case "category":
 					combined.WriteString(entry.Category + " ")
 				}
 			}
-			combinedEntries[i] = [2]string{entry.Resource, combined.String()}
+			combinedEntries[i] = [2]string{entry.Id, combined.String()}
 		}
 
 		matches := fuzzy.Find(query, getSecondStrings(combinedEntries))
@@ -78,14 +75,14 @@ func TestDependencyResolver_FuzzySearch(t *testing.T) {
 	}
 
 	output := captureOutput(func() {
-		matches := fuzzySearch("second", []string{"ldesc"})
+		matches := fuzzySearch("second", []string{"desc"})
 		for _, match := range matches {
 			fmt.Print(resolver.MockShowResourceEntry(match))
 			fmt.Println("---")
 		}
 	})
 
-	expectedOutput := "ResourceEntry{Resource:b Name:B Sdesc:Resource B Ldesc:The second resource, dependent on A Category:example}\n---\n"
+	expectedOutput := "ResourceEntry{Id:b Name:B Desc:The second resource, dependent on A Category:example}\n---\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output %s, got %s", expectedOutput, output)
 	}

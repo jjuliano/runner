@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strconv"
@@ -17,11 +16,6 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-)
-
-var (
-	command   string
-	resources []string
 )
 
 func initConfig() {
@@ -55,9 +49,17 @@ func writeEnvToFile(envFilePath string) error {
 	if err != nil {
 		return err
 	}
-	defer envFile.Close()
+	defer func(envFile *os.File) {
+		err := envFile.Close()
+		if err != nil {
+			resolver.LogErrorExit("Error creating env file: ", err)
+		}
+	}(envFile)
 
-	os.Setenv("KDEPS_ENV", envFilePath)
+	err = os.Setenv("KDEPS_ENV", envFilePath)
+	if err != nil {
+		return err
+	}
 
 	for _, env := range os.Environ() {
 		// Split the environment variable into key and value
@@ -76,13 +78,6 @@ func writeEnvToFile(envFilePath string) error {
 		}
 	}
 	return nil
-}
-
-func sourceEnvFile(envFilePath string) error {
-	cmd := exec.Command("sh", "-c", "set -a && source "+envFilePath+" && set +a")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
 }
 
 func createRootCmd(dr *resolver.DependencyResolver) *cobra.Command {
@@ -109,7 +104,10 @@ func createDependsCmd(dr *resolver.DependencyResolver) *cobra.Command {
 		Use:   "depends [resource_names...]",
 		Short: "List dependencies of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			dr.HandleDependsCommand(args)
+			err := dr.HandleDependsCommand(args)
+			if err != nil {
+				resolver.LogErrorExit("Error handling depends command", err)
+			}
 		},
 	}
 }
@@ -119,7 +117,10 @@ func createRDependsCmd(dr *resolver.DependencyResolver) *cobra.Command {
 		Use:   "rdepends [resource_names...]",
 		Short: "List reverse dependencies of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			dr.HandleRDependsCommand(args)
+			err := dr.HandleRDependsCommand(args)
+			if err != nil {
+				resolver.LogErrorExit("Error handling depends command", err)
+			}
 		},
 	}
 }
@@ -129,7 +130,10 @@ func createShowCmd(dr *resolver.DependencyResolver) *cobra.Command {
 		Use:   "show [resource_names...]",
 		Short: "Show details of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			dr.HandleShowCommand(args)
+			err := dr.HandleShowCommand(args)
+			if err != nil {
+				resolver.LogErrorExit("Error handling show command", err)
+			}
 		},
 	}
 }
@@ -139,7 +143,10 @@ func createSearchCmd(dr *resolver.DependencyResolver) *cobra.Command {
 		Use:   "search [resource_names...]",
 		Short: "Search for the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			dr.HandleSearchCommand(args)
+			err := dr.HandleSearchCommand(args)
+			if err != nil {
+				resolver.LogErrorExit("Error handling search command", err)
+			}
 		},
 	}
 }
@@ -149,7 +156,10 @@ func createCategoryCmd(dr *resolver.DependencyResolver) *cobra.Command {
 		Use:   "category [resource_names...]",
 		Short: "List categories of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			dr.HandleCategoryCommand(args)
+			err := dr.HandleCategoryCommand(args)
+			if err != nil {
+				resolver.LogErrorExit("Error handling category command", err)
+			}
 		},
 	}
 }
@@ -159,7 +169,10 @@ func createTreeCmd(dr *resolver.DependencyResolver) *cobra.Command {
 		Use:   "tree [resource_names...]",
 		Short: "Show dependency tree of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			dr.HandleTreeCommand(args)
+			err := dr.HandleTreeCommand(args)
+			if err != nil {
+				resolver.LogErrorExit("Error handling tree command", err)
+			}
 		},
 	}
 }
@@ -169,7 +182,10 @@ func createTreeListCmd(dr *resolver.DependencyResolver) *cobra.Command {
 		Use:   "tree-list [resource_names...]",
 		Short: "Show dependency tree list of the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			dr.HandleTreeListCommand(args)
+			err := dr.HandleTreeListCommand(args)
+			if err != nil {
+				resolver.LogErrorExit("Error handling tree list command", err)
+			}
 		},
 	}
 }
@@ -179,7 +195,10 @@ func createIndexCmd(dr *resolver.DependencyResolver) *cobra.Command {
 		Use:   "index",
 		Short: "List all resource entries",
 		Run: func(cmd *cobra.Command, args []string) {
-			dr.HandleIndexCommand()
+			err := dr.HandleIndexCommand()
+			if err != nil {
+				resolver.LogErrorExit("Error handling index command", err)
+			}
 		},
 	}
 }
@@ -189,7 +208,10 @@ func createRunCmd(dr *resolver.DependencyResolver) *cobra.Command {
 		Use:   "run [resource_names...]",
 		Short: "Run the commands for the given resources",
 		Run: func(cmd *cobra.Command, args []string) {
-			dr.HandleRunCommand(args)
+			err := dr.HandleRunCommand(args)
+			if err != nil {
+				resolver.LogErrorExit("Error handling run command", err)
+			}
 		},
 	}
 }
@@ -236,7 +258,12 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Failed to create shell session: %v", err)
 	}
-	defer session.Close()
+	defer func(session *kdepexec.ShellSession) {
+		err := session.Close()
+		if err != nil {
+			resolver.LogErrorExit("Error closing session", err)
+		}
+	}(session)
 
 	dependencyResolver, err := resolver.NewDependencyResolver(afero.NewOsFs(), logger, workDir, session)
 	if err != nil {
