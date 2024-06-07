@@ -21,12 +21,12 @@ func setupTestResolver() *DependencyResolver {
 	}
 	defer session.Close()
 
-	resolver, err := NewDependencyResolver(fs, logger, "", session)
+	resolver, err := NewGraphResolver(fs, logger, "", session)
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}
 
-	resolver.Resources = []ResourceEntry{
+	resolver.Resources = []ResourceNodeEntry{
 		{Id: "a", Name: "A", Desc: "The first resource in the alphabetical order", Category: "example", Requires: []string{}},
 		{Id: "b", Name: "B", Desc: "The second resource, dependent on A", Category: "example", Requires: []string{"a"}},
 		{Id: "c", Name: "C", Desc: "The third resource, dependent on B", Category: "example", Requires: []string{"b"}},
@@ -200,7 +200,7 @@ z
 
 func TestListDirectDependencies_CircularDependency(t *testing.T) {
 	resolver := setupTestResolver()
-	resolver.Resources = []ResourceEntry{
+	resolver.Resources = []ResourceNodeEntry{
 		{Id: "a", Name: "A", Requires: []string{"c"}},
 		{Id: "b", Name: "B", Requires: []string{"a"}},
 		{Id: "c", Name: "C", Requires: []string{"b"}},

@@ -54,7 +54,7 @@ func setupTestResolver() *resolver.DependencyResolver {
 	}
 	defer session.Close()
 
-	dependencyResolver, err := resolver.NewDependencyResolver(fs, logger, "", session)
+	dependencyResolver, err := resolver.NewGraphResolver(fs, logger, "", session)
 	if err != nil {
 		log.Fatalf("Failed to create dependency dependencyResolver: %v", err)
 	}

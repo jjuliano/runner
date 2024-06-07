@@ -11,7 +11,7 @@ import (
 
 type DependencyResolver struct {
 	Fs                   afero.Fs
-	Resources            []ResourceEntry
+	Resources            []ResourceNodeEntry
 	ResourceDependencies map[string][]string
 	DependencyGraph      []string
 	VisitedPaths         map[string]bool
@@ -42,7 +42,7 @@ type StepKey struct {
 	node string
 }
 
-type ResourceEntry struct {
+type ResourceNodeEntry struct {
 	Id       string    `yaml:"id"`
 	Name     string    `yaml:"name"`
 	Desc     string    `yaml:"desc"`
@@ -51,8 +51,8 @@ type ResourceEntry struct {
 	Run      []RunStep `yaml:"run"`
 }
 
-func NewDependencyResolver(fs afero.Fs, logger *log.Logger, workDir string, shellSession *kdepexec.ShellSession) (*DependencyResolver, error) {
-	dr := &DependencyResolver{
+func NewGraphResolver(fs afero.Fs, logger *log.Logger, workDir string, shellSession *kdepexec.ShellSession) (*DependencyResolver, error) {
+	dependencyResolver := &DependencyResolver{
 		Fs:                   fs,
 		ResourceDependencies: make(map[string][]string),
 		VisitedPaths:         make(map[string]bool),
@@ -61,9 +61,9 @@ func NewDependencyResolver(fs afero.Fs, logger *log.Logger, workDir string, shel
 		ShellSession:         shellSession,
 	}
 
-	dr.Graph = graph.NewDependencyGraph(fs, logger, dr.ResourceDependencies)
-	if dr.Graph == nil {
+	dependencyResolver.Graph = graph.NewDependencyGraph(fs, logger, dependencyResolver.ResourceDependencies)
+	if dependencyResolver.Graph == nil {
 		return nil, fmt.Errorf("failed to initialize dependency graph")
 	}
-	return dr, nil
+	return dependencyResolver, nil
 }

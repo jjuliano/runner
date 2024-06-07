@@ -18,7 +18,7 @@ func TestLoadResourceEntries(t *testing.T) {
 		logger.Fatalf("Failed to create shell session: %v", err)
 	}
 	defer session.Close()
-	dr, err := NewDependencyResolver(fs, logger, "", session)
+	dr, err := NewGraphResolver(fs, logger, "", session)
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestLoadResourceEntries_CircularDependency(t *testing.T) {
 		logger.Fatalf("Failed to create shell session: %v", err)
 	}
 	defer session.Close()
-	dr, err := NewDependencyResolver(fs, logger, "", session)
+	dr, err := NewGraphResolver(fs, logger, "", session)
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}

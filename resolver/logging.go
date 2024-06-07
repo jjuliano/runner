@@ -9,26 +9,26 @@ import (
 
 var logger = log.Default()
 
-// LogErrorExit logs an error message and exits the program
+// LogErrorExit KdepsLogs an error message and exits the program
 func LogErrorExit(message string, err error) {
 	msg := fmt.Sprintf("❌ %s: %s", message, err)
 	logger.Errorf(msg)
 	os.Exit(1)
 }
 
-// LogError logs an error message and returns an error
+// LogError KdepsLogs an error message and returns an error
 func LogError(message string, err error) error {
 	msg := fmt.Sprintf("❌ %s: %s", message, err)
 	logger.Errorf(msg)
 	return fmt.Errorf(msg)
 }
 
-// LogInfo logs an informational message
+// LogInfo KdepsLogs an informational message
 func LogInfo(message string) {
 	logger.Info(message)
 }
 
-// LogDebug logs a debugging message
+// LogDebug KdepsLogs a debugging message
 func LogDebug(message string) {
 	logger.Warn(message)
 }

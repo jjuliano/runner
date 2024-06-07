@@ -12,7 +12,7 @@ func (dr *DependencyResolver) LoadResourceEntries(filePath string) error {
 	}
 
 	var fileResources struct {
-		Resources []ResourceEntry `yaml:"resources"`
+		Resources []ResourceNodeEntry `yaml:"resources"`
 	}
 
 	if err := yaml.Unmarshal(data, &fileResources); err != nil {
@@ -40,7 +40,7 @@ func (dr *DependencyResolver) ShowResourceEntry(res string) error {
 
 func (dr *DependencyResolver) SaveResourceEntries(filePath string) error {
 	data := struct {
-		Resources []ResourceEntry `yaml:"resources"`
+		Resources []ResourceNodeEntry `yaml:"resources"`
 	}{
 		Resources: dr.Resources,
 	}

@@ -15,7 +15,7 @@ import (
 func (dr *DependencyResolver) MockShowResourceEntry(res string) string {
 	for _, entry := range dr.Resources {
 		if entry.Id == res {
-			return fmt.Sprintf("ResourceEntry{Id:%s Name:%s Desc:%s Category:%s}\n",
+			return fmt.Sprintf("ResourceNodeEntry{Id:%s Name:%s Desc:%s Category:%s}\n",
 				entry.Id, entry.Name, entry.Desc, entry.Category)
 		}
 	}
@@ -30,12 +30,12 @@ func TestDependencyResolver_FuzzySearch(t *testing.T) {
 		logger.Fatalf("Failed to create shell session: %v", err)
 	}
 	defer session.Close()
-	resolver, err := NewDependencyResolver(afero.NewMemMapFs(), logger, "", session)
+	resolver, err := NewGraphResolver(afero.NewMemMapFs(), logger, "", session)
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}
 
-	resolver.Resources = []ResourceEntry{
+	resolver.Resources = []ResourceNodeEntry{
 		{Id: "a", Name: "A", Desc: "The first resource in the alphabetical order", Category: "example"},
 		{Id: "b", Name: "B", Desc: "The second resource, dependent on A", Category: "example"},
 		{Id: "c", Name: "C", Desc: "The third resource, dependent on B", Category: "example"},
@@ -82,7 +82,7 @@ func TestDependencyResolver_FuzzySearch(t *testing.T) {
 		}
 	})
 
-	expectedOutput := "ResourceEntry{Id:b Name:B Desc:The second resource, dependent on A Category:example}\n---\n"
+	expectedOutput := "ResourceNodeEntry{Id:b Name:B Desc:The second resource, dependent on A Category:example}\n---\n"
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output %s, got %s", expectedOutput, output)
 	}

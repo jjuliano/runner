@@ -265,7 +265,7 @@ func main() {
 		}
 	}(session)
 
-	dependencyResolver, err := resolver.NewDependencyResolver(afero.NewOsFs(), logger, workDir, session)
+	dependencyResolver, err := resolver.NewGraphResolver(afero.NewOsFs(), logger, workDir, session)
 	if err != nil {
 		logger.Fatalf("Failed to create dependency resolver: %v", err)
 	}
