@@ -4,6 +4,8 @@ package main
 import (
 	"bytes"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -34,14 +36,53 @@ func captureOutput(f func()) string {
 }
 
 func initTestConfig() {
-	viper.SetConfigName("test_config")
+	mockFs := afero.NewMemMapFs()
+	tempDir := "kdeps_test"
+	localFile := tempDir + "/test_resources.yaml"
+	configFile := tempDir + "/test_config.yaml"
+
+	mockFs.MkdirAll(tempDir, 0755)
+
+	localYAMLContent := `
+resources:
+  - id: "res1"
+    name: "Id 1"
+    desc: "Long description 1"
+    category: "cat1"
+    requires: ["res2"]
+  - id: "res2"
+    name: "Id 2"
+    desc: "Long description 2"
+    category: "cat2"
+    requires: ["res3"]
+  - id: "res3"
+    name: "Id 3"
+    desc: "Long description 3"
+    category: "cat3"
+    requires: []
+`
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(localYAMLContent))
+	}))
+
+	kdepsConfigContent := []byte(`
+workflows:
+  - ` + server.URL + `
+  - ` + localFile + `
+`)
+
+	afero.WriteFile(mockFs, configFile, []byte(kdepsConfigContent), 0644)
+
+	defer server.Close()
+
+	viper.SetConfigName(configFile)
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		viper.Set("resource_files", []string{"./test_resources.yaml"})
+		viper.Set("workflows", []string{localFile})
 	}
 }
 

@@ -160,7 +160,7 @@ func ProcessResourceNodeRules(expectations []interface{}, client *http.Client, l
 
 // HasValidRulePrefix checks if the string has a valid prefix for checks.
 func HasValidRulePrefix(s string) bool {
-	prefixes := []string{"ENV:", "FILE:", "DIR:", "URL:", "CMD:", "!"}
+	prefixes := []string{"ENV:", "FILE:", "DIR:", "URL:", "CMD:", "EXEC:", "!"}
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(s, prefix) {
 			return true

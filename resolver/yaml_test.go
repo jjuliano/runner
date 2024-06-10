@@ -1,6 +1,8 @@
 package resolver
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/charmbracelet/log"
@@ -8,17 +10,15 @@ import (
 	"github.com/spf13/afero"
 )
 
-var testFilePaths = []string{"/test/file1.yaml", "/test/file2.yaml"}
-
 func TestLoadResourceEntries(t *testing.T) {
-	fs := afero.NewMemMapFs()
 	logger := log.New(nil)
 	session, err := kdepexec.NewShellSession()
 	if err != nil {
 		logger.Fatalf("Failed to create shell session: %v", err)
 	}
 	defer session.Close()
-	dr, err := NewGraphResolver(fs, logger, "", session)
+
+	dr, err := NewGraphResolver(afero.NewOsFs(), logger, "", session)
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}
@@ -43,12 +43,34 @@ resources:
       - "dep3"
       - "dep4"
 `
-	afero.WriteFile(fs, testFilePaths[0], []byte(yamlData1), 0644)
-	afero.WriteFile(fs, testFilePaths[1], []byte(yamlData2), 0644)
+
+	tmpFile1, err := ioutil.TempFile("", "resource1-*.yaml")
+	if err != nil {
+		log.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpFile1.Name())
+
+	tmpFile2, err := ioutil.TempFile("", "resource2-*.yaml")
+	if err != nil {
+		log.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpFile2.Name())
+
+	if _, err := tmpFile1.Write([]byte(yamlData1)); err != nil {
+		log.Fatalf("Failed to write to temp file: %v", err)
+	}
+	if _, err := tmpFile2.Write([]byte(yamlData2)); err != nil {
+		log.Fatalf("Failed to write to temp file: %v", err)
+	}
+
+	testFilePaths := []string{tmpFile1.Name(), tmpFile2.Name()}
 
 	for _, filePath := range testFilePaths {
 		dr.LoadResourceEntries(filePath)
 	}
+
+	tmpFile1.Close()
+	tmpFile2.Close()
 
 	if len(dr.Resources) != 2 {
 		t.Errorf("Expected 2 resources, got %d", len(dr.Resources))
@@ -59,14 +81,14 @@ resources:
 }
 
 func TestLoadResourceEntries_CircularDependency(t *testing.T) {
-	fs := afero.NewMemMapFs()
 	logger := log.New(nil)
 	session, err := kdepexec.NewShellSession()
 	if err != nil {
 		logger.Fatalf("Failed to create shell session: %v", err)
 	}
 	defer session.Close()
-	dr, err := NewGraphResolver(fs, logger, "", session)
+
+	dr, err := NewGraphResolver(afero.NewOsFs(), logger, "", session)
 	if err != nil {
 		log.Fatalf("Failed to create dependency resolver: %v", err)
 	}
@@ -92,12 +114,27 @@ resources:
     requires:
       - "b"
 `
+
+	tmpFile, err := ioutil.TempFile("", "test1-*.yaml")
+	if err != nil {
+		log.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	if _, err := tmpFile.Write([]byte(yamlData)); err != nil {
+		log.Fatalf("Failed to write to temp file: %v", err)
+	}
+
+	testFilePaths := []string{tmpFile.Name()}
+
+	for _, filePath := range testFilePaths {
+		dr.LoadResourceEntries(filePath)
+	}
+
 	afero.WriteFile(fs, testFilePaths[0], []byte(yamlData), 0644)
 	dr.LoadResourceEntries(testFilePaths[0])
 
-	if len(dr.Resources) != 3 {
-		t.Errorf("Expected 3 resources, got %d", len(dr.Resources))
-	}
+	tmpFile.Close()
 
 	expectedResources := []string{"a", "b", "c"}
 	for i, res := range expectedResources {

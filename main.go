@@ -270,7 +270,7 @@ func main() {
 		logger.Fatalf("Failed to create dependency resolver: %v", err)
 	}
 
-	resourceFiles := viper.GetStringSlice("resource_files")
+	resourceFiles := viper.GetStringSlice("workflows")
 	for _, file := range resourceFiles {
 		if err := dependencyResolver.LoadResourceEntries(file); err != nil {
 			resolver.PrintError("Error loading resource entries", err)
