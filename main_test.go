@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/kdeps/plugins/kdepexec"
 	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -35,15 +35,47 @@ func captureOutput(f func()) string {
 	return buf.String()
 }
 
-func initTestConfig() {
-	mockFs := afero.NewMemMapFs()
-	tempDir := "kdeps_test"
-	localFile := tempDir + "/test_resources.yaml"
-	configFile := tempDir + "/test_config.yaml"
+func initTestConfig(t *testing.T) (afero.Fs, string, string) {
+	fs := afero.NewOsFs()
+	tempDir := filepath.Join(os.TempDir(), "kdeps_test")
+	localFile := filepath.Join(tempDir, "test_resources.yaml")
+	configFile := filepath.Join(tempDir, "test_config.yaml")
 
-	mockFs.MkdirAll(tempDir, 0755)
+	// Create the temp directory
+	err := fs.MkdirAll(tempDir, 0755)
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 
-	localYAMLContent := `
+	// Create the test_resources.yaml file
+	file, err := fs.Create(localFile)
+	if err != nil {
+		t.Fatalf("failed to create local file: %v", err)
+	}
+	file.Close()
+
+	// Create the test_config.yaml file
+	file, err = fs.Create(configFile)
+	if err != nil {
+		t.Fatalf("failed to create config file: %v", err)
+	}
+	file.Close()
+
+	// Defer the deletion of the temp directory
+	t.Cleanup(func() {
+		err := os.RemoveAll(tempDir)
+		if err != nil {
+			t.Fatalf("failed to remove temp dir: %v", err)
+		}
+	})
+
+	return fs, configFile, localFile
+}
+
+func setupTestResolver(fs afero.Fs, configFile string, localFile string) *resolver.DependencyResolver {
+	logger := log.New(nil)
+
+	localYAMLContent := []byte(`
 resources:
   - id: "res1"
     name: "Id 1"
@@ -60,7 +92,8 @@ resources:
     desc: "Long description 3"
     category: "cat3"
     requires: []
-`
+`)
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(localYAMLContent))
 	}))
@@ -71,24 +104,20 @@ workflows:
   - ` + localFile + `
 `)
 
-	afero.WriteFile(mockFs, configFile, []byte(kdepsConfigContent), 0644)
-
+	afero.WriteFile(fs, configFile, []byte(kdepsConfigContent), 0644)
+	afero.WriteFile(fs, localFile, []byte(localYAMLContent), 0644)
 	defer server.Close()
 
 	viper.SetConfigName(configFile)
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+	viper.AddConfigPath("/")
 	viper.AutomaticEnv()
 
-	err := viper.ReadInConfig()
-	if err != nil {
-		viper.Set("workflows", []string{localFile})
+	if err := viper.ReadInConfig(); err != nil {
+		resolver.PrintError("Error reading config file", err)
+		os.Exit(1)
 	}
-}
 
-func setupTestResolver() *resolver.DependencyResolver {
-	fs := afero.NewMemMapFs()
-	logger := log.New(nil)
 	session, err := kdepexec.NewShellSession()
 	if err != nil {
 		logger.Fatalf("Failed to create shell session: %v", err)
@@ -100,40 +129,20 @@ func setupTestResolver() *resolver.DependencyResolver {
 		log.Fatalf("Failed to create dependency dependencyResolver: %v", err)
 	}
 
-	yamlData := `
-resources:
-  - id: "res1"
-    name: "Id 1"
-    desc: "Long description 1"
-    category: "cat1"
-    requires: ["res2"]
-  - id: "res2"
-    name: "Id 2"
-    desc: "Long description 2"
-    category: "cat2"
-    requires: ["res3"]
-  - id: "res3"
-    name: "Id 3"
-    desc: "Long description 3"
-    category: "cat3"
-    requires: []
-`
-	afero.WriteFile(fs, "./test_resources.yaml", []byte(yamlData), 0644)
-	dependencyResolver.LoadResourceEntries("./test_resources.yaml")
+	resourceFiles := viper.GetStringSlice("workflows")
+	for _, file := range resourceFiles {
+		if err := dependencyResolver.LoadResourceEntries(file); err != nil {
+			resolver.PrintError("Error loading resource entries", err)
+			os.Exit(1)
+		}
+	}
+
 	return dependencyResolver
 }
 
 func TestDependsCommand(t *testing.T) {
-	initTestConfig()
-	resolver := setupTestResolver()
-	rootCmd := &cobra.Command{Use: "kdeps"}
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "depends [resource_names...]",
-		Short: "List dependencies of the given resources",
-		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleDependsCommand(args)
-		},
-	})
+	resolver := setupTestResolver(initTestConfig(t))
+	rootCmd := createRootCmd(resolver)
 
 	args := []string{"depends", "res1"}
 	rootCmd.SetArgs(args)
@@ -152,16 +161,8 @@ func TestDependsCommand(t *testing.T) {
 }
 
 func TestRDependsCommand(t *testing.T) {
-	initTestConfig()
-	resolver := setupTestResolver()
-	rootCmd := &cobra.Command{Use: "kdeps"}
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "rdepends [resource_names...]",
-		Short: "List reverse dependencies of the given resources",
-		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleRDependsCommand(args)
-		},
-	})
+	resolver := setupTestResolver(initTestConfig(t))
+	rootCmd := createRootCmd(resolver)
 
 	args := []string{"rdepends", "res3"}
 	rootCmd.SetArgs(args)
@@ -180,16 +181,8 @@ func TestRDependsCommand(t *testing.T) {
 }
 
 func TestShowCommand(t *testing.T) {
-	initTestConfig()
-	resolver := setupTestResolver()
-	rootCmd := &cobra.Command{Use: "kdeps"}
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "show [resource_names...]",
-		Short: "Show details of the given resources",
-		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleShowCommand(args)
-		},
-	})
+	resolver := setupTestResolver(initTestConfig(t))
+	rootCmd := createRootCmd(resolver)
 
 	args := []string{"show", "res1"}
 	rootCmd.SetArgs(args)
@@ -208,16 +201,8 @@ func TestShowCommand(t *testing.T) {
 }
 
 func TestSearchCommand(t *testing.T) {
-	initTestConfig()
-	resolver := setupTestResolver()
-	rootCmd := &cobra.Command{Use: "kdeps"}
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "search [resource_names...]",
-		Short: "Search for the given resources",
-		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleSearchCommand(args)
-		},
-	})
+	resolver := setupTestResolver(initTestConfig(t))
+	rootCmd := createRootCmd(resolver)
 
 	args := []string{"search", "Id 1"}
 	rootCmd.SetArgs(args)
@@ -236,16 +221,8 @@ func TestSearchCommand(t *testing.T) {
 }
 
 func TestCategoryCommand(t *testing.T) {
-	initTestConfig()
-	resolver := setupTestResolver()
-	rootCmd := &cobra.Command{Use: "kdeps"}
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "category [resource_names...]",
-		Short: "List categories of the given resources",
-		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleCategoryCommand(args)
-		},
-	})
+	resolver := setupTestResolver(initTestConfig(t))
+	rootCmd := createRootCmd(resolver)
 
 	args := []string{"category", "cat3"}
 	rootCmd.SetArgs(args)
@@ -264,16 +241,8 @@ func TestCategoryCommand(t *testing.T) {
 }
 
 func TestTreeCommand(t *testing.T) {
-	initTestConfig()
-	resolver := setupTestResolver()
-	rootCmd := &cobra.Command{Use: "kdeps"}
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "tree [resource_names...]",
-		Short: "Show dependency tree of the given resources",
-		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleTreeCommand(args)
-		},
-	})
+	resolver := setupTestResolver(initTestConfig(t))
+	rootCmd := createRootCmd(resolver)
 
 	args := []string{"tree", "res1"}
 	rootCmd.SetArgs(args)
@@ -292,16 +261,8 @@ func TestTreeCommand(t *testing.T) {
 }
 
 func TestTreeListCommand(t *testing.T) {
-	initTestConfig()
-	resolver := setupTestResolver()
-	rootCmd := &cobra.Command{Use: "kdeps"}
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "tree-list [resource_names...]",
-		Short: "Show dependency tree list of the given resources",
-		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleTreeListCommand(args)
-		},
-	})
+	resolver := setupTestResolver(initTestConfig(t))
+	rootCmd := createRootCmd(resolver)
 
 	args := []string{"tree-list", "res1"}
 	rootCmd.SetArgs(args)
@@ -320,16 +281,8 @@ func TestTreeListCommand(t *testing.T) {
 }
 
 func TestDependsCommand_CircularDependency(t *testing.T) {
-	initTestConfig()
-	resolver := setupTestResolver()
-	rootCmd := &cobra.Command{Use: "kdeps"}
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "depends [resource_names...]",
-		Short: "List dependencies of the given resources",
-		Run: func(cmd *cobra.Command, args []string) {
-			resolver.HandleDependsCommand(args)
-		},
-	})
+	resolver := setupTestResolver(initTestConfig(t))
+	rootCmd := createRootCmd(resolver)
 
 	args := []string{"depends", "res1"}
 	rootCmd.SetArgs(args)
@@ -342,6 +295,63 @@ func TestDependsCommand_CircularDependency(t *testing.T) {
 	})
 
 	expectedOutput := "res1\nres1 -> res2\nres1 -> res2 -> res3"
+	if !strings.Contains(output, expectedOutput) {
+		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
+	}
+}
+
+func TestIndexCommand(t *testing.T) {
+	resolver := setupTestResolver(initTestConfig(t))
+	rootCmd := createRootCmd(resolver)
+
+	args := []string{"index"}
+	rootCmd.SetArgs(args)
+
+	output := captureOutput(func() {
+		err := rootCmd.Execute()
+		if err != nil {
+			t.Fatalf("Failed to execute command: %v", err)
+		}
+	})
+
+	expectedOutput :=
+		`📦 Id: res1
+📛 Name: Id 1
+📝 Description: Long description 1
+🏷️  Category: cat1
+🔗 Requirements: [res2]
+---
+📦 Id: res2
+📛 Name: Id 2
+📝 Description: Long description 2
+🏷️  Category: cat2
+🔗 Requirements: [res3]
+---
+📦 Id: res3
+📛 Name: Id 3
+📝 Description: Long description 3
+🏷️  Category: cat3
+🔗 Requirements: []
+---
+📦 Id: res1
+📛 Name: Id 1
+📝 Description: Long description 1
+🏷️  Category: cat1
+🔗 Requirements: [res2]
+---
+📦 Id: res2
+📛 Name: Id 2
+📝 Description: Long description 2
+🏷️  Category: cat2
+🔗 Requirements: [res3]
+---
+📦 Id: res3
+📛 Name: Id 3
+📝 Description: Long description 3
+🏷️  Category: cat3
+🔗 Requirements: []
+---
+`
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)
 	}
