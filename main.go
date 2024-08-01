@@ -18,15 +18,40 @@ import (
 	"github.com/spf13/viper"
 )
 
+var cfgFile string
+
 func initConfig() {
-	viper.SetConfigName("kdeps")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+	if cfgFile != "" {
+		if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
+			fmt.Println("Config file does not exist:", cfgFile)
+			os.Exit(1)
+		}
+		viper.SetConfigFile(cfgFile)
+		fmt.Println("Using config file:", cfgFile)
+	} else {
+		viper.SetConfigName("kdeps")
+		viper.AddConfigPath(".")
+		fmt.Println("Using default config settings")
+	}
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
+		fmt.Println("Error reading config file:", err)
 		resolver.PrintError("Error reading config file", err)
 		os.Exit(1)
+	} else {
+		fmt.Println("Successfully read config file:", viper.ConfigFileUsed())
+	}
+
+	// Debugging line: Print the entire Viper configuration
+	fmt.Printf("Viper configuration: %+v\n", viper.AllSettings())
+
+	// Additional debugging to check the presence of workflows
+	if viper.IsSet("workflows") {
+		fmt.Println("Workflows configuration found")
+		fmt.Printf("Workflows: %+v\n", viper.Get("workflows"))
+	} else {
+		fmt.Println("Workflows configuration NOT found")
 	}
 }
 
@@ -62,17 +87,14 @@ func writeEnvToFile(envFilePath string) error {
 	}
 
 	for _, env := range os.Environ() {
-		// Split the environment variable into key and value
 		parts := strings.SplitN(env, "=", 2)
 		key := parts[0]
 		value := parts[1]
 
-		// Quote the value if it contains special characters or spaces
 		if strings.ContainsAny(value, " \t\n\r\"'") {
 			value = strconv.Quote(value)
 		}
 
-		// Write the environment variable to the file
 		if _, err := envFile.WriteString(fmt.Sprintf("%s=%s\n", key, value)); err != nil {
 			return err
 		}
@@ -84,7 +106,12 @@ func createRootCmd(dr *resolver.DependencyResolver) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "kdeps",
 		Short: "A resource dependency resolver",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			initConfig()
+		},
 	}
+
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is kdeps.yaml)")
 
 	rootCmd.AddCommand(createDependsCmd(dr))
 	rootCmd.AddCommand(createRDependsCmd(dr))
@@ -119,7 +146,7 @@ func createRDependsCmd(dr *resolver.DependencyResolver) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			err := dr.HandleRDependsCommand(args)
 			if err != nil {
-				resolver.LogErrorExit("Error handling depends command", err)
+				resolver.LogErrorExit("Error handling rdepends command", err)
 			}
 		},
 	}
@@ -225,12 +252,14 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Failed to create work directory: %v", err)
 	}
+	fmt.Println("Created work directory:", workDir)
 
 	cleanup := func() {
 		if err := os.RemoveAll(workDir); err != nil {
 			logger.Errorf("Failed to remove work directory: %v", err)
 		} else {
 			logger.Infof("Cleaned up work directory: %s", workDir)
+			fmt.Println("Cleaned up work directory:", workDir)
 		}
 	}
 	defer cleanup()
@@ -241,6 +270,7 @@ func main() {
 	go func() {
 		sig := <-sigs
 		logger.Infof("Received signal: %v, cleaning up...", sig)
+		fmt.Println("Received signal:", sig)
 		cleanup()
 		os.Exit(0)
 	}()
@@ -249,10 +279,12 @@ func main() {
 	if err := writeEnvToFile(envFilePath); err != nil {
 		logger.Fatalf("Failed to write environment variables to file: %v", err)
 	}
+	fmt.Println("Wrote environment variables to file:", envFilePath)
 
 	if err := resolver.SourceEnvFile(envFilePath); err != nil {
 		logger.Fatalf("Failed to source environment file: %v", err)
 	}
+	fmt.Println("Sourced environment file:", envFilePath)
 
 	session, err := kdepexec.NewShellSession()
 	if err != nil {
@@ -269,9 +301,17 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Failed to create dependency resolver: %v", err)
 	}
+	fmt.Println("Created dependency resolver")
 
 	resourceFiles := viper.GetStringSlice("workflows")
+	fmt.Println("Resource files from config:", resourceFiles)
+	if len(resourceFiles) == 0 {
+		fmt.Println("No workflows defined in the configuration file")
+		os.Exit(1)
+	}
+
 	for _, file := range resourceFiles {
+		fmt.Printf("Loading resource file: %s\n", file) // Debugging line
 		if err := dependencyResolver.LoadResourceEntries(file); err != nil {
 			resolver.PrintError("Error loading resource entries", err)
 			os.Exit(1)
