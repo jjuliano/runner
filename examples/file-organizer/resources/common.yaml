@@ -1,0 +1,48 @@
+resources:
+  - id: xcode-select
+    name: "Apple Xcode command-line tools"
+    desc: "Command-line tools is the build essential for the macOS environment"
+    category: "development"
+    requires: []
+    run:
+      - name: "run xcode-select"
+        exec: "xcode-select --install"
+        check:
+          - "CMD:xcode-select"
+        skip:
+          - "CMD:make"
+          - "CMD:git"
+        expect:
+          - "CMD:make"
+
+  - id: homebrew
+    name: "Homebrew Package Manager"
+    desc: "The Missing Package Manager for macOS (or Linux)"
+    requires:
+      - xcode-select
+    run:
+      - name: "install homebrew"
+        check:
+          - "CMD:curl"
+        exec: 'NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+        skip:
+          - "CMD:brew"
+        expect:
+          - "CMD:brew"
+
+  - id: git
+    name: "Git SCM"
+    desc: "Git is a distributed version control system for tracking changes in source code."
+    category: "development"
+    requires:
+      - xcode-select
+      - homebrew
+    run:
+      - name: "install git"
+        exec: "brew install git"
+        check:
+          - "CMD:brew"
+        skip:
+          - "CMD:git"
+        expect:
+          - "CMD:git"

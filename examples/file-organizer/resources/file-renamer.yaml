@@ -1,0 +1,31 @@
+resources:
+  - id: ai-organize-file
+    name: "Organize the file using LLM"
+    desc: "Copy and organize the file using LLM"
+    category: "tagger"
+    requires:
+      - ai-tag
+    run:
+      - name: "organize the file using LLM"
+        check:
+          - "FILE:tag/bin/tag"
+          - "ENV:KDEPS_PARAMS1"
+          - "ENV:KDEPS_PARAMS2"
+          - "ENV:FILE_TAG"
+          - "ENV:FILE_SUMMARY"
+          - "ENV:FILE_CONTENTS"
+          - "ENV:FILE_TYPE"
+        llm: "llama3.1"
+        chat: |
+          Given the file '$FILE_TYPE' with tags $FILE_TAG and summary $FILE_SUMMARY, suggest the best descriptive
+          filename for it. Do not use the original filename, but ensure to add it's original file extension.'
+      - name: "show the new name"
+        check:
+          - "ENV:KDEPS_LLM_OUTPUT"
+          - "ENV:KDEPS_PARAMS1"
+          - "ENV:KDEPS_PARAMS2"
+        exec: "echo $KDEPS_LLM_OUTPUT"
+      - name: "create the target directory"
+        exec: "mkdir -p $KDEPS_PARAMS2 2> /dev/null"
+      - name: "copy the file to the new name"
+        exec: "cp \"$KDEPS_PARAMS1\" \"$KDEPS_PARAMS2/$KDEPS_LLM_OUTPUT\""
