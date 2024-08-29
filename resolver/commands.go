@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"io/ioutil"
 	"strings"
 	"sync"
+	"regexp"
+	"unicode"
 
 	"github.com/kdeps/plugins/expect"
 	"github.com/kdeps/plugins/kdepexec"
@@ -119,7 +122,7 @@ func SourceEnvFile(envFilePath string) error {
 // ProcessNodeSteps processes each step by executing the relevant checks.
 func (dr *DependencyResolver) ProcessNodeSteps(steps []interface{}, stepType, resNode string, client *http.Client, logs *KdepsLogs) error {
 	for _, step := range steps {
-		LogDebug(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, step, resNode))
+		LogInfo(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, step, resNode))
 		if err := ProcessSingleNodeRule(step, client, logs); err != nil {
 			return LogError(fmt.Sprintf("Error processing step '%v' in '%s' steps: ", step, stepType), err)
 		}
@@ -191,6 +194,30 @@ func (dr *DependencyResolver) ProcessResourceNodeEnvVarDeclarations(envVars []En
 			if err != nil {
 				LogErrorExit(fmt.Sprintf("Failed to read input for environment variable %s: ", envVar.Name), err)
 			}
+		} else if envVar.File != "" {
+			// Check if envVar.File starts with a "$" to resolve environment variable
+			if strings.HasPrefix(envVar.File, "$") {
+				envVarName := envVar.File[1:] // Remove the "$" prefix
+				filePath := os.Getenv(envVarName)
+				if filePath == "" {
+					LogErrorExit(fmt.Sprintf("Environment variable %s not set or empty", envVarName), nil)
+				}
+				envVar.File = filePath
+			}
+
+			// Read the contents of the file and store it in value
+			fileContent, err := ioutil.ReadFile(envVar.File)
+			if err != nil {
+				LogErrorExit(fmt.Sprintf("Failed to read file for environment variable %s: ", envVar.Name), err)
+			}
+
+			if envVar.PromptSafe {
+				re := regexp.MustCompile(`[^a-zA-Z0-9\s]+`)
+				sanitizedContent := re.ReplaceAllString(strings.ReplaceAll(string(fileContent), "\n", " "), "")
+				value = strings.Join(strings.Fields(sanitizedContent), " ")
+			} else {
+				value = string(fileContent)
+			}
 		} else {
 			value = envVar.Value
 		}
@@ -230,6 +257,67 @@ func (dr *DependencyResolver) ExecuteAndLogCommand(step RunStep, resName string,
 
 	if result.Err != nil {
 		LogErrorExit(fmt.Sprintf("Command execution error for '%s' ", step.Name), result.Err)
+	}
+
+	return nil
+}
+
+func (dr *DependencyResolver) ExecuteAndLogChatCommand(step RunStep, resName string, resNode string, logs *KdepsLogs) error {
+	LogInfo(fmt.Sprintf("Executing command: '%s' for resource: '%s', step: '%s'", step.Exec, resName, step.Name))
+
+	// Set environment variables
+	if err := dr.ProcessResourceNodeEnvVarDeclarations(step.Env); err != nil {
+		LogErrorExit(fmt.Sprintf("Failed to set environment variables for step: '%s'", step.Name), err)
+	}
+
+	var result kdepexec.CommandResult
+	var ok bool
+	var prompt string
+
+	LogInfo(fmt.Sprintf("Using LLM Model: %s", step.LLM))
+
+	// Expand environment variables in the Chat field
+	expandedChat := os.ExpandEnv(step.Chat)
+	prompt = fmt.Sprintf("Without prefacing it with anything, giving explanations or justifications: %s", expandedChat)
+
+	re := regexp.MustCompile(`[^a-zA-Z0-9\s]+`)
+	prompt = re.ReplaceAllString(strings.ReplaceAll(string(expandedChat), "\n", " "), "")
+	prompt = strings.Join(strings.Fields(prompt), " ")
+
+	step.Exec = fmt.Sprintf("chatgpt -p '%s -- Without prefacing it with anything, giving explanations or justifications. It is extremely forbidden tot enclose it with parenthesis or quotes.'", prompt)
+
+	execResultChan := dr.ShellSession.ExecuteCommand(step.Exec)
+	result, ok = <-execResultChan
+	logEntry := StepLog{
+		targetRes: resNode,
+		command:   fmt.Sprintf("LLM Chat Prompt: '%s'", expandedChat),
+		id:        resName,
+		name:      step.Name,
+		message:   result.Output,
+	}
+
+	logs.Add(logEntry)
+
+	if !ok {
+		LogErrorExit(fmt.Sprintf("Failed to execute command: '%s'", step.Exec), nil)
+	}
+
+	if result.Err != nil {
+		LogErrorExit(fmt.Sprintf("Command execution error for '%s' ", step.Name), result.Err)
+	}
+
+	result.Output = strings.Map(func(r rune) rune {
+		if unicode.IsGraphic(r) {
+			return r
+		}
+		return -1
+	}, result.Output)
+
+	result.Output = strings.ReplaceAll(result.Output, "[0K", "")
+	result.Output = strings.TrimLeft(result.Output, " \t\n\r")
+
+	if err := os.Setenv("KDEPS_LLM_OUTPUT", result.Output); err != nil {
+		LogErrorExit(fmt.Sprintf("Failed to log LLM output: '%s'", result.Output), err)
 	}
 
 	return nil
@@ -317,7 +405,7 @@ func (dr *DependencyResolver) BuildNodeSkipMap(steps []RunStep, resNode string, 
 // HandleResourceNodeStep handles the execution and logging of a step.
 func (dr *DependencyResolver) HandleResourceNodeStep(step RunStep, resNode string, skip map[StepKey]bool, logs *KdepsLogs, client *http.Client) {
 	skipKey := StepKey{name: step.Name, node: resNode}
-	LogDebug(fmt.Sprintf("Skip key '%v' = %v", skipKey, skip[skipKey]))
+	// LogDebug(fmt.Sprintf("Skip key '%v' = %v", skipKey, skip[skipKey]))
 
 	if skip[skipKey] {
 		logs.Add(StepLog{targetRes: resNode, command: step.Exec, id: resNode, name: step.Name, message: "Step skipped."})
@@ -327,6 +415,12 @@ func (dr *DependencyResolver) HandleResourceNodeStep(step RunStep, resNode strin
 
 	if step.Exec != "" {
 		if err := dr.ExecuteAndLogCommand(step, resNode, resNode, logs); err != nil {
+			LogErrorExit(fmt.Sprintf("Execution failed for step '%s' of resource '%s': ", step.Name, resNode), err)
+		}
+	}
+
+	if step.Chat != "" {
+		if err := dr.ExecuteAndLogChatCommand(step, resNode, resNode, logs); err != nil {
 			LogErrorExit(fmt.Sprintf("Execution failed for step '%s' of resource '%s': ", step.Name, resNode), err)
 		}
 	}

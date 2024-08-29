@@ -24,6 +24,8 @@ type DependencyResolver struct {
 type RunStep struct {
 	Name   string      `yaml:"name"`
 	Exec   string      `yaml:"exec"`
+	Chat   string      `yaml:"chat"`
+	LLM    string      `yaml:"llm"`
 	Skip   interface{} `yaml:"skip"`
 	Check  interface{} `yaml:"check"`
 	Expect interface{} `yaml:"expect"`
@@ -35,6 +37,8 @@ type EnvVar struct {
 	Value string `yaml:"value,omitempty"`
 	Exec  string `yaml:"exec,omitempty"`
 	Input string `yaml:"input,omitempty"`
+	File  string `yaml:"file,omitempty"`
+	PromptSafe bool `yaml:"prompt_safe,omitempty"`
 }
 
 type StepKey struct {

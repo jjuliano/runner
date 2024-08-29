@@ -4,6 +4,9 @@ TEST_REPORT = test-report.out
 COVERAGE_REPORT = coverage.out
 PACKAGE_LIST = ./...
 
+# List of GOOS/GOARCH pairs for macOS, Windows, and Linux
+TARGETS := $(filter darwin/% linux/% windows/%, $(shell go tool dist list))
+
 # Default target
 all: test
 
@@ -14,10 +17,7 @@ test:
 	@go test -coverprofile=$(COVERAGE_REPORT) $(PACKAGE_LIST)
 
 # Build the project
-build:
-	@echo "Building project..."
-	@go build -o $(PROJECT_NAME)
-	@chmod a+x $(PROJECT_NAME)
+build: $(TARGETS)
 
 # Clean up generated files
 clean:
@@ -43,21 +43,8 @@ vet:
 coverage: test
 	@go tool cover -html=$(COVERAGE_REPORT)
 
-# Additional targets for cross-compilation
-linux:
-	@echo "Building for Linux..."
-	@GOOS=linux GOARCH=amd64 go build -o ./build/$(PROJECT_NAME)_linux_amd64/ $(PACKAGE_LIST)
+$(TARGETS):
+	@echo "Building for $@"
+	@GOOS=$(word 1,$(subst /, ,$@)) GOARCH=$(word 2,$(subst /, ,$@)) go build -o ./build/$(PROJECT_NAME)_$(word 1,$(subst /, ,$@))_$(word 2,$(subst /, ,$@))/$(PROJECT_NAME)
 
-darwin:
-	@echo "Building for macOS (Darwin)..."
-	@GOOS=darwin GOARCH=amd64 go build -o ./build/$(PROJECT_NAME)_darwin_amd64/ $(PACKAGE_LIST)
-
-windows:
-	@echo "Building for Windows..."
-	@GOOS=windows GOARCH=amd64 go build -o ./build/$(PROJECT_NAME)_windows_amd64/ $(PACKAGE_LIST)
-
-arm:
-	@echo "Building for ARM..."
-	@GOOS=linux GOARCH=arm go build -o ./build/$(PROJECT_NAME)_linux_arm/ $(PACKAGE_LIST)
-
-.PHONY: all test build clean lint fmt vet coverage linux darwin windows arm
+.PHONY: all test build clean lint fmt vet coverage $(TARGETS)

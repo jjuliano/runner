@@ -19,6 +19,7 @@ import (
 )
 
 var cfgFile string
+var params string
 
 func initConfig() {
 	if cfgFile != "" {
@@ -27,32 +28,45 @@ func initConfig() {
 			os.Exit(1)
 		}
 		viper.SetConfigFile(cfgFile)
-		fmt.Println("Using config file:", cfgFile)
+		// fmt.Println("Using config file:", cfgFile)
 	} else {
 		viper.SetConfigName("kdeps")
 		viper.AddConfigPath(".")
-		fmt.Println("Using default config settings")
+		// fmt.Println("Using default config settings")
 	}
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println("Error reading config file:", err)
 		resolver.PrintError("Error reading config file", err)
 		os.Exit(1)
-	} else {
-		fmt.Println("Successfully read config file:", viper.ConfigFileUsed())
 	}
+
+	if params != "" {
+		paramList := strings.Split(params, ";")
+		for i, param := range paramList {
+			param = strings.TrimSpace(param) // Trim spaces around each param
+			envVar := fmt.Sprintf("KDEPS_PARAMS%d", i+1)
+			if err := os.Setenv(envVar, param); err != nil {
+				fmt.Printf("Error setting %s: %v\n", envVar, err)
+				os.Exit(1)
+			}
+		}
+	}
+
+	// else {
+	// 	fmt.Println("Successfully read config file:", viper.ConfigFileUsed())
+	// }
 
 	// Debugging line: Print the entire Viper configuration
-	fmt.Printf("Viper configuration: %+v\n", viper.AllSettings())
+	// fmt.Printf("Viper configuration: %+v\n", viper.AllSettings())
 
 	// Additional debugging to check the presence of workflows
-	if viper.IsSet("workflows") {
-		fmt.Println("Workflows configuration found")
-		fmt.Printf("Workflows: %+v\n", viper.Get("workflows"))
-	} else {
-		fmt.Println("Workflows configuration NOT found")
-	}
+	// if !viper.IsSet("workflows") {
+	// 	fmt.Println("Workflows configuration found")
+	// 	fmt.Printf("Workflows: %+v\n", viper.Get("workflows"))
+	// } else {
+	// 	fmt.Println("Workflows configuration NOT found")
+	// }
 }
 
 func initLogger() *log.Logger {
@@ -81,8 +95,7 @@ func writeEnvToFile(envFilePath string) error {
 		}
 	}(envFile)
 
-	err = os.Setenv("KDEPS_ENV", envFilePath)
-	if err != nil {
+	if err = os.Setenv("KDEPS_ENV", envFilePath); err != nil {
 		return err
 	}
 
@@ -105,13 +118,14 @@ func writeEnvToFile(envFilePath string) error {
 func createRootCmd(dr *resolver.DependencyResolver) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "kdeps",
-		Short: "A resource dependency resolver",
+		Short: "A graph-based AI orchestrator",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initConfig()
 		},
 	}
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is kdeps.yaml)")
+	rootCmd.PersistentFlags().StringVar(&params, "params", "", "extra parameters, semi-colon separated")
 
 	rootCmd.AddCommand(createDependsCmd(dr))
 	rootCmd.AddCommand(createRDependsCmd(dr))
@@ -252,13 +266,12 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Failed to create work directory: %v", err)
 	}
-	fmt.Println("Created work directory:", workDir)
+	// fmt.Println("Created work directory:", workDir)
 
 	cleanup := func() {
 		if err := os.RemoveAll(workDir); err != nil {
 			logger.Errorf("Failed to remove work directory: %v", err)
 		} else {
-			logger.Infof("Cleaned up work directory: %s", workDir)
 			fmt.Println("Cleaned up work directory:", workDir)
 		}
 	}
@@ -279,7 +292,7 @@ func main() {
 	if err := writeEnvToFile(envFilePath); err != nil {
 		logger.Fatalf("Failed to write environment variables to file: %v", err)
 	}
-	fmt.Println("Wrote environment variables to file:", envFilePath)
+	// fmt.Println("Wrote environment variables to file:", envFilePath)
 
 	if err := resolver.SourceEnvFile(envFilePath); err != nil {
 		logger.Fatalf("Failed to source environment file: %v", err)
@@ -301,10 +314,10 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Failed to create dependency resolver: %v", err)
 	}
-	fmt.Println("Created dependency resolver")
+	// fmt.Println("Created dependency resolver")
 
 	resourceFiles := viper.GetStringSlice("workflows")
-	fmt.Println("Resource files from config:", resourceFiles)
+	// fmt.Println("Resource files from config:", resourceFiles)
 	if len(resourceFiles) == 0 {
 		fmt.Println("No workflows defined in the configuration file")
 		os.Exit(1)
