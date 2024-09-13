@@ -9,7 +9,7 @@ import (
 	"strings"
 	"syscall"
 
-	"kdeps/resolver"
+	"github.com/kdeps/kdeps-mvp/resolver"
 
 	"github.com/charmbracelet/log"
 	"github.com/kdeps/plugins/kdepexec"
