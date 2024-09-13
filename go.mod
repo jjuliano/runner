@@ -1,4 +1,4 @@
-module kdeps
+module kdeps-mvp
 
 go 1.22.3
 
