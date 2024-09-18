@@ -60,6 +60,62 @@ git -> jdberry-tag
 git -> jdberry-tag -> ai-tag
 git -> jdberry-tag -> ai-tag -> ai-organize-file
 ```
+
+## Usage
+
+### Preflight/Postflight Checks and Skipping Steps
+
+You can define rules to check conditions before and after executing a command. You can also specify conditions to skip a step.
+
+* Preflight checks are defined in the `check:` array.
+* Postflight checks are defined in the `expect:` array.
+* Skip conditions are set using the `skip:` array.
+
+You can negate any check by prefixing it with `!`.
+
+```yaml
+  check:
+    - "ENV:SHOULD_EXISTS"
+    - "!ENV:SHOULD_NOT_EXISTS"
+  expect:
+    - "CMD:command_should_exists_in_path"
+  skip:
+    - "FILE:/skip/if/this/file/exists.txt"
+```
+
+### Supported Prefixes
+
+The following prefixes are available for condition checks:
+
+* `ENV:`  - Check if an environment variable exists.
+* `FILE:` - Check if a file exists.
+* `DIR:`  - Check if a directory exists.
+* `URL:`  - Check if a fully qualified domain name (FQDN) URL exists.
+* `CMD:`  - Check if a command exists in the `$PATH`.
+* `EXEC:` - Check if a command runs successfully (returns a 0 exit code).
+
+### Environment Variables
+
+You can set environment variables using the `env:` array. Values can be sourced from a `file:`, the result of an `exec:` command, a static `value:`, or by requesting user input with `input:`.
+
+```yaml
+  env:
+    - name: "FILE_CONTENTS"
+      file: "$RUNNER_PARAMS1"
+    - name: "FILE_TYPE"
+      exec: "file $KDEPS_PARAMS1"
+    - name: "HELLO"
+      value: "WORLD"
+    - name: "GH_TOKEN"
+      input: "Please enter the GH_TOKEN:"
+```
+
+Additionally, you can directly append variables to `$RUNNER_ENV`.
+
+### Optional Parameters
+
+Optional parameters can be passed using the `--params` flag. The syntax is `--params "Hello;World"`, which translates to `$RUNNER_PARAMS1` ("Hello") and `$RUNNER_PARAMS2` ("World") in the context of the resources.
+
 ## Available commands
 
 ```
@@ -91,20 +147,50 @@ Use "runner [command] --help" for more information about a command.
 
 ## Installation
 
-You can download the latest from the release, or use Go.
+You can download the latest release, or install using Go.
 
-Runner requires Go `1.22`, to install:
+#### Using Go (requires Go 1.22 or later):
+```bash
+go install github.com/jjuliano/runner@latest
+```
 
-`go install github.com/jjuliano/runner@latest`
-
-Or clone the repo:
-
-```sh
+#### From source:
+```bash
 git clone https://github.com/jjuliano/runner.git
 cd runner
 make build
 ```
 
+---
+
+## Development
+
+To contribute or modify the project, follow these steps:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/jjuliano/runner.git
+   ```
+
+2. Navigate to the project directory:
+   ```bash
+   cd runner
+   ```
+
+3. Install dependencies and build the project:
+   ```bash
+   make build
+   ```
+
+4. Run tests to ensure everything works correctly:
+   ```bash
+   make test
+   ```
+
+Feel free to submit pull requests or report any issues.
+
+---
+
 ## Author
 
-Runner was created by Joel Bryan Juliano, and under Apache 2.0 License
+**Runner** was created by Joel Bryan Juliano and is licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0).

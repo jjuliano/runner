@@ -1,4 +1,0 @@
-workflows:
-  - resources/common.yaml
-  - resources/file-tagger.yaml
-  - resources/file-renamer.yaml
