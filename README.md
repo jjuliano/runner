@@ -1,96 +1,94 @@
-# kdeps
-The missing package manager for Kubernetes
+# Runner
+A simple graph-based orchestrated runner
 
-## Features
+## Step 1: Create your workflow
+`myService/runner.yml`
 
-- Eliminates Kubernetes GLUE code
-- Automatically resolve dependencies (services, configs or packages)
-- Check if service is running, build, install and check if not
-- Needed to be JAILED env, create a tmpdir, cd into there, run from dot env file from there.
-  - cleanup on exit
-- Target:
-  - Docker Image
-  - K8s
-  - Local
-  - SSH
-  - Shell
-- Expect
-- NotExpect
-- Env (Array)
-- Env supports
-  - Exec
-  - (soon) INPUT
-  - Name / Value
-- TargetEnv (Key)
-- Linter to check YAML files
-- If GIT is provided, clone and CD into the repository
-- If Folder is provided, CD into the folder
-- API Calls via
-- GET
-- POST
-- DELETE
-- RegistryImage: ???
-- RegistryURL: ???
-- DockerPods: ???
-- KubePods: ???
+```yaml
+workflows:
+  - resources/github.yaml
+  - resources/auth.yaml
+  - resources/database.yaml
+  - resources/backend.yaml
+  - resources/redis.yaml
+  - resources/kafka.yaml
+  - resources/docker.yaml
+  - https://example.com/runner.yaml
+```
 
-- **Dependency Resolution:** List dependencies of a package and its reverse dependencies.
-- **Package Information:** Show detailed information about a package.
-- **Package Search:** Search for packages based on keywords.
-- **Category Listing:** List packages belonging to specific categories.
-- **Dependency Tree:** Visualize the dependency tree of a package.
+## Step 2: Create your resources
+`myService/resources/backend1.yaml`
 
-## Installation
+```yaml
+resources:
+  - id: backend1
+    name: "Backend1 is responsible for setting up Auth"
+    desc: "Backend1 handles authentication between API calls"
+    category: "auth"
+    requires:
+      - github-accesss
+      - helm-charts
+      - helm-postgresql
+    run:
+      - name: "Clone repo"
+        check:
+          - "FILE:data/files.txt"
+          - "ENV:GH_TOKEN"
+          - "CMD:git"
+        exec: |
+            git clone https://github.com/example/backend1.git backend1
+      - name: "Compile project"
+        check:
+          - "ENV:SOME_TOKEN"
+          - "ENV:RUNNER_PARAMS1"
+          - "CMD:make"
+          - "CMD:go"
+        exec: "make build"
+```
 
-### Prerequisites
+## Step 3: Run
 
-- Go (Golang) installed on your system.
+`$ runner run backend1`
 
-### Install from Source
+## Step 4: (Optional) See direct or reverse dependencies
 
-To install the package dependency resolver from source, follow these steps:
+`$ runner rdepends git`
 
-1. Clone the repository:
+```text
+git
+git -> jdberry-tag
+git -> jdberry-tag -> ai-tag
+git -> jdberry-tag -> ai-tag -> ai-organize-file
+```
+## Available commands
 
-   ```sh
-   git clone https://github.com/kdeps/kdeps.git
-   ```
+```
+A graph-based orchestrated runner
 
-2. Navigate to the project directory:
+Usage:
+  runner [command]
 
-   ```sh
-   cd kdeps
-   ```
+Available Commands:
+  category    List categories of the given resources
+  completion  Generate the autocompletion script for the specified shell
+  depends     List dependencies of the given resources
+  help        Help about any command
+  index       List all resource entries
+  rdepends    List reverse dependencies of the given resources
+  run         Run the commands for the given resources
+  search      Search for the given resources
+  show        Show details of the given resources
+  tree        Show dependency tree of the given resources
+  tree-list   Show dependency tree list of the given resources
 
-3. Build the project:
+Flags:
+      --config string   config file (default is runner.yaml)
+  -h, --help            help for kdeps
+      --params string   extra parameters, semi-colon separated
 
-   ```sh
-   make build
-   ```
+Use "runner [command] --help" for more information about a command.
+```
 
-4. Move the executable to your PATH (optional):
+## Author
 
-   ```sh
-   sudo mv kdeps /usr/local/bin
-   ```
-
-Now you can use the `kdeps` command to interact with the package resolver.
-
-## Usage
-
-### Basic Commands
-
-- **List Dependencies:** `kdeps depends [package_names...]`
-- **List Reverse Dependencies:** `kdeps rdepends [package_names...]`
-- **Show Package Details:** `kdeps show [package_names...]`
-- **Search for Packages:** `kdeps search [query]`
-- **List Categories:** `kdeps category [categories...]`
-- **Show Dependency Tree:** `kdeps tree [package_names...]`
-- **Show Dependency Tree (Top-Down):** `kdeps tree-list [package_names...]`
-- **List All Package Entries:** `kdeps index`
-
-For more detailed usage and options, run `kdeps --help` or `kdeps [command] --help`.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
+Runner was created by Joel Bryan Juliano, and under Apache 2.0 License
