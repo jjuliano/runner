@@ -406,7 +406,7 @@ func (dr *DependencyResolver) HandleCategoryCommand(resources []string) error {
 		for _, category := range resources {
 			if entry.Category == category {
 				LogDebug("Listing resource in category: " + category)
-				Println("ð " + entry.Id)
+				Println("📦 " + entry.Id)
 			}
 		}
 	}
@@ -435,7 +435,7 @@ func (dr *DependencyResolver) HandleTreeListCommand(resources []string) error {
 func (dr *DependencyResolver) HandleIndexCommand() error {
 	for _, entry := range dr.Resources {
 		LogDebug("Indexing resource: " + entry.Id)
-		PrintMessage("ð¦ Id: %s\nð Name: %s\nð Description: %s\nð·ï¸  Category: %s\nð Requirements: %v\n",
+		PrintMessage("📦 Id: %s\n📛 Name: %s\n📝 Description: %s\n  Category: %s\n🔗 Requirements: %v\n",
 			entry.Id, entry.Name, entry.Desc, entry.Category, entry.Requires)
 		Println("---")
 	}
