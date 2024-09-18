@@ -1,7 +1,10 @@
-# Runner
-A simple graph-based orchestrated runner
+# runner
+runner is a graph-based orchestrator runner.
 
-## Step 1: Create your workflow
+It uses graphs to calculate the run-order of your workflows.
+So you can define your workflows and dependencies, and let runner orchestrate it for you.
+
+## Step 1: Define your workflow
 `myService/runner.yml`
 
 ```yaml
@@ -26,7 +29,7 @@ resources:
     desc: "Backend1 handles authentication between API calls"
     category: "auth"
     requires:
-      - github-accesss
+      - github-access
       - helm-charts
       - helm-postgresql
     run:
