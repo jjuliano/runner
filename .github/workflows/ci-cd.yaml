@@ -15,13 +15,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set PROJECT_NAME
         run: echo "PROJECT_NAME=runner" >> $GITHUB_ENV
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: 1.22
 
@@ -31,7 +31,7 @@ jobs:
 
       - name: Get commit messages since last release
         id: get_commit_messages
-        run: echo "::set-output name=commits::$(git log --pretty=format:'%s' ${{ env.COMMIT_HASH }}..HEAD)"
+        run: echo "commits=$(git log --pretty=format:'%s' ${{ env.COMMIT_HASH }}..HEAD)" >> $GITHUB_ENV
         env:
           COMMIT_HASH: ${{ env.COMMIT_HASH }}
 
@@ -81,10 +81,10 @@ jobs:
         with:
           tag_name: ${{ env.COMMIT_HASH }}
           release_name: DEV Release ${{ env.COMMIT_HASH }}
-          body: ${{ steps.get_commit_messages.outputs.commits }}
+          body: ${{ env.commits }}
 
       - name: Upload release artifact (Linux - amd64)
-        id: upload-release-asset-linux
+        id: upload-release-asset-linux-amd64
         uses: actions/upload-release-asset@v1
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
@@ -97,7 +97,7 @@ jobs:
           asset_content_type: application/gzip
 
       - name: Upload release artifact (Linux - arm64)
-        id: upload-release-asset-linux
+        id: upload-release-asset-linux-arm64
         uses: actions/upload-release-asset@v1
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
@@ -110,7 +110,7 @@ jobs:
           asset_content_type: application/gzip
 
       - name: Upload release artifact (macOS - amd64)
-        id: upload-release-asset-macOS
+        id: upload-release-asset-macOS-amd64
         uses: actions/upload-release-asset@v1
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
@@ -123,7 +123,7 @@ jobs:
           asset_content_type: application/gzip
 
       - name: Upload release artifact (macOS - arm64)
-        id: upload-release-asset-macOS
+        id: upload-release-asset-macOS-arm64
         uses: actions/upload-release-asset@v1
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
@@ -136,7 +136,7 @@ jobs:
           asset_content_type: application/gzip
 
       - name: Upload release artifact (Windows - amd64)
-        id: upload-release-asset-windows
+        id: upload-release-asset-windows-amd64
         uses: actions/upload-release-asset@v1
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
@@ -149,7 +149,7 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload release artifact (Windows - arm64)
-        id: upload-release-asset-windows
+        id: upload-release-asset-windows-arm64
         uses: actions/upload-release-asset@v1
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
