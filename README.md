@@ -4,6 +4,13 @@ runner is a graph-based orchestrator runner.
 It uses graphs to calculate the run-order of your workflows.
 So you can define your workflows and dependencies, and let runner orchestrate it for you.
 
+With runner you can:
+
+  * Eliminate overly complex and unmaintainable shell scripts.
+  * Git-OPS read: Have a single source-of-truth for your scripts and workflows.
+  * CI/CD Ready: runner binary can be deployed to any Docker image and/or include in your CI/CD pipeline.
+  * zero Python, zero Javascript. 99% YAML configurations. (And shell-scripts)
+
 ## Step 1: Define your workflow
 `myService/runner.yml`
 
