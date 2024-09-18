@@ -1,5 +1,5 @@
 # Variables
-PROJECT_NAME = kdeps
+PROJECT_NAME = runner
 TEST_REPORT = test-report.out
 COVERAGE_REPORT = coverage.out
 PACKAGE_LIST = ./...

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kdeps/kdeps-mvp/resolver"
+	"github.com/jjuliano/runner/resolver"
 
 	"github.com/charmbracelet/log"
 	"github.com/kdeps/plugins/kdepexec"

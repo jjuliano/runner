@@ -40,7 +40,7 @@ func captureOutput(f func()) string {
 }
 
 func createWorkDir() (string, error) {
-	tmpDir, err := os.MkdirTemp("", "kdeps_workdir")
+	tmpDir, err := os.MkdirTemp("", "runner_workdir")
 	if err != nil {
 		return "", err
 	}
@@ -54,7 +54,7 @@ func writeEnvToFile(envFilePath string) error {
 	}
 	defer envFile.Close()
 
-	os.Setenv("KDEPS_ENV", envFilePath)
+	os.Setenv("RUNNER_ENV", envFilePath)
 
 	for _, env := range os.Environ() {
 		// Split the environment variable into key and value
@@ -97,7 +97,7 @@ func setup() (string, func()) {
 		}
 	}
 
-	envFilePath := filepath.Join(workDir, ".kdeps_env")
+	envFilePath := filepath.Join(workDir, ".runner_env")
 	if err := writeEnvToFile(envFilePath); err != nil {
 		logger.Fatalf("Failed to write environment variables to file: %v", err)
 	}
@@ -106,7 +106,7 @@ func setup() (string, func()) {
 		logger.Fatalf("Failed to source environment file: %v", err)
 	}
 
-	// data, err := os.ReadFile(os.Getenv("KDEPS_ENV"))
+	// data, err := os.ReadFile(os.Getenv("RUNNER_ENV"))
 	// if err != nil {
 	//	log.Fatal(err)
 	// }

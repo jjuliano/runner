@@ -3,7 +3,7 @@
 #
 # Binaries for programs and plugins
 kdeps
-kdeps_*
+runner_*
 *.exe
 *.exe~
 *.dll

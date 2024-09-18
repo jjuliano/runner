@@ -20,13 +20,13 @@ func setupTestRunResolver() *DependencyResolver {
 	workDir, teardown := setup()
 	defer teardown()
 
-	// Write environment variables to .kdeps_env file
-	envFilePath := filepath.Join(workDir, ".kdeps_env")
+	// Write environment variables to .runner_env file
+	envFilePath := filepath.Join(workDir, ".runner_env")
 	if err := writeEnvToFile(envFilePath); err != nil {
 		logger.Fatalf("Failed to write environment variables to file: %v", err)
 	}
 
-	// Source the .kdeps_env file
+	// Source the .runner_env file
 	if err := sourceEnvFile(envFilePath); err != nil {
 		logger.Fatalf("Failed to source environment file: %v", err)
 	}

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/kdeps/kdeps-mvp/resolver"
+	"github.com/jjuliano/runner/resolver"
 
 	"github.com/charmbracelet/log"
 	"github.com/kdeps/plugins/kdepexec"
@@ -45,7 +45,7 @@ func initConfig() {
 		paramList := strings.Split(params, ";")
 		for i, param := range paramList {
 			param = strings.TrimSpace(param) // Trim spaces around each param
-			envVar := fmt.Sprintf("KDEPS_PARAMS%d", i+1)
+			envVar := fmt.Sprintf("RUNNER_PARAMS%d", i+1)
 			if err := os.Setenv(envVar, param); err != nil {
 				fmt.Printf("Error setting %s: %v\n", envVar, err)
 				os.Exit(1)
@@ -76,7 +76,7 @@ func initLogger() *log.Logger {
 }
 
 func createWorkDir() (string, error) {
-	tmpDir, err := os.MkdirTemp("", "kdeps_workdir")
+	tmpDir, err := os.MkdirTemp("", "runner_workdir")
 	if err != nil {
 		return "", err
 	}
@@ -95,7 +95,7 @@ func writeEnvToFile(envFilePath string) error {
 		}
 	}(envFile)
 
-	if err = os.Setenv("KDEPS_ENV", envFilePath); err != nil {
+	if err = os.Setenv("RUNNER_ENV", envFilePath); err != nil {
 		return err
 	}
 
@@ -124,7 +124,7 @@ func createRootCmd(dr *resolver.DependencyResolver) *cobra.Command {
 		},
 	}
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is kdeps.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is runner.yaml)")
 	rootCmd.PersistentFlags().StringVar(&params, "params", "", "extra parameters, semi-colon separated")
 
 	rootCmd.AddCommand(createDependsCmd(dr))
@@ -288,7 +288,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	envFilePath := filepath.Join(workDir, ".kdeps_env")
+	envFilePath := filepath.Join(workDir, ".runner_env")
 	if err := writeEnvToFile(envFilePath); err != nil {
 		logger.Fatalf("Failed to write environment variables to file: %v", err)
 	}

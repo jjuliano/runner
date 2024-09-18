@@ -316,7 +316,7 @@ func (dr *DependencyResolver) ExecuteAndLogChatCommand(step RunStep, resName str
 	result.Output = strings.ReplaceAll(result.Output, "[0K", "")
 	result.Output = strings.TrimLeft(result.Output, " \t\n\r")
 
-	if err := os.Setenv("KDEPS_LLM_OUTPUT", result.Output); err != nil {
+	if err := os.Setenv("RUNNER_LLM_OUTPUT", result.Output); err != nil {
 		LogErrorExit(fmt.Sprintf("Failed to log LLM output: '%s'", result.Output), err)
 	}
 
@@ -432,7 +432,7 @@ func (dr *DependencyResolver) HandleResourceNodeStep(step RunStep, resNode strin
 	}
 
 	if expectSteps, ok := step.Expect.([]interface{}); ok {
-		if err := SourceEnvFile(os.Getenv("KDEPS_ENV")); err != nil {
+		if err := SourceEnvFile(os.Getenv("RUNNER_ENV")); err != nil {
 			LogErrorExit(fmt.Sprintf("Failed to source environment file for step: '%s'", step.Name), err)
 		}
 
