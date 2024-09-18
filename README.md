@@ -89,6 +89,22 @@ Flags:
 Use "runner [command] --help" for more information about a command.
 ```
 
+## Installation
+
+You can download the latest from the release, or use Go.
+
+Runner requires Go `1.22`, to install:
+
+`go install github.com/jjuliano/runner@latest`
+
+Or clone the repo:
+
+```sh
+git clone https://github.com/jjuliano/runner.git
+cd runner
+make build
+```
+
 ## Author
 
 Runner was created by Joel Bryan Juliano, and under Apache 2.0 License
