@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"io/ioutil"
 	"strings"
 	"sync"
-	"regexp"
-	"unicode"
 
 	"github.com/kdeps/plugins/expect"
 	"github.com/kdeps/plugins/kdepexec"
@@ -24,15 +21,15 @@ type StepLog struct {
 	targetRes string
 }
 
-// KdepsLogs manages the logging mechanism with synchronization.
-type KdepsLogs struct {
+// RunnerLogs manages the logging mechanism with synchronization.
+type RunnerLogs struct {
 	mu      sync.Mutex
 	entries []StepLog
 	closed  bool
 }
 
-// Add adds a new log entry to the KdepsLogs.
-func (m *KdepsLogs) Add(entry StepLog) {
+// Add adds a new log entry to the RunnerLogs.
+func (m *RunnerLogs) Add(entry StepLog) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.closed {
@@ -43,14 +40,14 @@ func (m *KdepsLogs) Add(entry StepLog) {
 }
 
 // Close closes the log after all goroutines are done.
-func (m *KdepsLogs) Close() {
+func (m *RunnerLogs) Close() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.closed = true
 }
 
 // StepLogs retrieves all log entries.
-func (m *KdepsLogs) StepLogs() []StepLog {
+func (m *RunnerLogs) StepLogs() []StepLog {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	logEntries := make([]StepLog, len(m.entries))
@@ -59,7 +56,7 @@ func (m *KdepsLogs) StepLogs() []StepLog {
 }
 
 // GetAllMessages retrieves all log messages as a slice of strings.
-func (m *KdepsLogs) GetAllMessages() []string {
+func (m *RunnerLogs) GetAllMessages() []string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	messages := make([]string, len(m.entries))
@@ -70,7 +67,7 @@ func (m *KdepsLogs) GetAllMessages() []string {
 }
 
 // GetAllMessageString retrieves all log messages as a string.
-func (m *KdepsLogs) GetAllMessageString() string {
+func (m *RunnerLogs) GetAllMessageString() string {
 	return strings.Join(m.GetAllMessages(), "\n")
 }
 
@@ -79,8 +76,8 @@ func FormatLogEntry(entry StepLog) string {
 	return strings.Join([]string{
 		"\n----------------------------------------------------------\n",
 		"📦 Id: " + entry.id,
-		"🔄 Step: " + entry.name,
-		"💻 Command: " + entry.command,
+		"📛 Step: " + entry.name,
+		"📝 Command: " + entry.command,
 		"\n" + entry.message,
 		"----------------------------------------------------------",
 	}, "\n")
@@ -120,7 +117,7 @@ func SourceEnvFile(envFilePath string) error {
 }
 
 // ProcessNodeSteps processes each step by executing the relevant checks.
-func (dr *DependencyResolver) ProcessNodeSteps(steps []interface{}, stepType, resNode string, client *http.Client, logs *KdepsLogs) error {
+func (dr *DependencyResolver) ProcessNodeSteps(steps []interface{}, stepType, resNode string, client *http.Client, logs *RunnerLogs) error {
 	for _, step := range steps {
 		LogInfo(fmt.Sprintf("Processing '%s' step: '%v' - '%s'", stepType, step, resNode))
 		if err := ProcessSingleNodeRule(step, client, logs); err != nil {
@@ -131,7 +128,7 @@ func (dr *DependencyResolver) ProcessNodeSteps(steps []interface{}, stepType, re
 }
 
 // ProcessSingleNodeRule processes an individual step element based on its type.
-func ProcessSingleNodeRule(element interface{}, client *http.Client, logs *KdepsLogs) error {
+func ProcessSingleNodeRule(element interface{}, client *http.Client, logs *RunnerLogs) error {
 	switch val := element.(type) {
 	case string:
 		if HasValidRulePrefix(val) {
@@ -151,7 +148,7 @@ func ProcessSingleNodeRule(element interface{}, client *http.Client, logs *Kdeps
 }
 
 // ProcessResourceNodeRules checks the expectations in the provided list.
-func ProcessResourceNodeRules(expectations []interface{}, client *http.Client, logs *KdepsLogs) error {
+func ProcessResourceNodeRules(expectations []interface{}, client *http.Client, logs *RunnerLogs) error {
 	strs := make([]string, len(expectations))
 	for i, v := range expectations {
 		if s, ok := v.(string); ok {
@@ -204,20 +201,6 @@ func (dr *DependencyResolver) ProcessResourceNodeEnvVarDeclarations(envVars []En
 				}
 				envVar.File = filePath
 			}
-
-			// Read the contents of the file and store it in value
-			fileContent, err := ioutil.ReadFile(envVar.File)
-			if err != nil {
-				LogErrorExit(fmt.Sprintf("Failed to read file for environment variable %s: ", envVar.Name), err)
-			}
-
-			if envVar.PromptSafe {
-				re := regexp.MustCompile(`[^a-zA-Z0-9\s]+`)
-				sanitizedContent := re.ReplaceAllString(strings.ReplaceAll(string(fileContent), "\n", " "), "")
-				value = strings.Join(strings.Fields(sanitizedContent), " ")
-			} else {
-				value = string(fileContent)
-			}
 		} else {
 			value = envVar.Value
 		}
@@ -229,7 +212,7 @@ func (dr *DependencyResolver) ProcessResourceNodeEnvVarDeclarations(envVars []En
 	return nil
 }
 
-func (dr *DependencyResolver) ExecuteAndLogCommand(step RunStep, resName string, resNode string, logs *KdepsLogs) error {
+func (dr *DependencyResolver) ExecuteAndLogCommand(step RunStep, resName string, resNode string, logs *RunnerLogs) error {
 	LogInfo(fmt.Sprintf("Executing command: '%s' for resource: '%s', step: '%s'", step.Exec, resName, step.Name))
 
 	// Set environment variables
@@ -262,70 +245,9 @@ func (dr *DependencyResolver) ExecuteAndLogCommand(step RunStep, resName string,
 	return nil
 }
 
-func (dr *DependencyResolver) ExecuteAndLogChatCommand(step RunStep, resName string, resNode string, logs *KdepsLogs) error {
-	LogInfo(fmt.Sprintf("Executing command: '%s' for resource: '%s', step: '%s'", step.Exec, resName, step.Name))
-
-	// Set environment variables
-	if err := dr.ProcessResourceNodeEnvVarDeclarations(step.Env); err != nil {
-		LogErrorExit(fmt.Sprintf("Failed to set environment variables for step: '%s'", step.Name), err)
-	}
-
-	var result kdepexec.CommandResult
-	var ok bool
-	var prompt string
-
-	LogInfo(fmt.Sprintf("Using LLM Model: %s", step.LLM))
-
-	// Expand environment variables in the Chat field
-	expandedChat := os.ExpandEnv(step.Chat)
-	prompt = fmt.Sprintf("Without prefacing it with anything, giving explanations or justifications: %s", expandedChat)
-
-	re := regexp.MustCompile(`[^a-zA-Z0-9\s]+`)
-	prompt = re.ReplaceAllString(strings.ReplaceAll(string(expandedChat), "\n", " "), "")
-	prompt = strings.Join(strings.Fields(prompt), " ")
-
-	step.Exec = fmt.Sprintf("chatgpt -p '%s -- Without prefacing it with anything, giving explanations or justifications. It is extremely forbidden tot enclose it with parenthesis or quotes.'", prompt)
-
-	execResultChan := dr.ShellSession.ExecuteCommand(step.Exec)
-	result, ok = <-execResultChan
-	logEntry := StepLog{
-		targetRes: resNode,
-		command:   fmt.Sprintf("LLM Chat Prompt: '%s'", expandedChat),
-		id:        resName,
-		name:      step.Name,
-		message:   result.Output,
-	}
-
-	logs.Add(logEntry)
-
-	if !ok {
-		LogErrorExit(fmt.Sprintf("Failed to execute command: '%s'", step.Exec), nil)
-	}
-
-	if result.Err != nil {
-		LogErrorExit(fmt.Sprintf("Command execution error for '%s' ", step.Name), result.Err)
-	}
-
-	result.Output = strings.Map(func(r rune) rune {
-		if unicode.IsGraphic(r) {
-			return r
-		}
-		return -1
-	}, result.Output)
-
-	result.Output = strings.ReplaceAll(result.Output, "[0K", "")
-	result.Output = strings.TrimLeft(result.Output, " \t\n\r")
-
-	if err := os.Setenv("RUNNER_LLM_OUTPUT", result.Output); err != nil {
-		LogErrorExit(fmt.Sprintf("Failed to log LLM output: '%s'", result.Output), err)
-	}
-
-	return nil
-}
-
 // HandleRunCommand handles the 'run' command for the given resources.
 func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
-	logs := &KdepsLogs{}
+	logs := &RunnerLogs{}
 
 	visited := make(map[string]bool)
 	client := &http.Client{}
@@ -348,8 +270,8 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 }
 
 // ResolveResourceNodeDependency resolves the dependency for a given resource node.
-func (dr *DependencyResolver) ResolveResourceNodeDependency(resNode string, res ResourceNodeEntry, logs *KdepsLogs, client *http.Client) {
-	LogInfo("🔍 Resolving dependency " + resNode)
+func (dr *DependencyResolver) ResolveResourceNodeDependency(resNode string, res ResourceNodeEntry, logs *RunnerLogs, client *http.Client) {
+	LogInfo("ð Resolving dependency " + resNode)
 	if res.Run == nil {
 		LogInfo("No run steps found for resource " + resNode)
 		return
@@ -370,7 +292,7 @@ func (dr *DependencyResolver) ResolveResourceNodeDependency(resNode string, res 
 }
 
 // ProcessNodeSkipRules processes skip steps for a given step.
-func (dr *DependencyResolver) ProcessNodeSkipRules(step RunStep, resNode string, skipResults map[StepKey]bool, mu *sync.Mutex, client *http.Client, logs *KdepsLogs) {
+func (dr *DependencyResolver) ProcessNodeSkipRules(step RunStep, resNode string, skipResults map[StepKey]bool, mu *sync.Mutex, client *http.Client, logs *RunnerLogs) {
 	if skipSteps, ok := step.Skip.([]interface{}); ok {
 		for _, skipStep := range skipSteps {
 			if skipStr, ok := skipStep.(string); ok && HasValidRulePrefix(skipStr) {
@@ -403,7 +325,7 @@ func (dr *DependencyResolver) BuildNodeSkipMap(steps []RunStep, resNode string, 
 }
 
 // HandleResourceNodeStep handles the execution and logging of a step.
-func (dr *DependencyResolver) HandleResourceNodeStep(step RunStep, resNode string, skip map[StepKey]bool, logs *KdepsLogs, client *http.Client) {
+func (dr *DependencyResolver) HandleResourceNodeStep(step RunStep, resNode string, skip map[StepKey]bool, logs *RunnerLogs, client *http.Client) {
 	skipKey := StepKey{name: step.Name, node: resNode}
 	// LogDebug(fmt.Sprintf("Skip key '%v' = %v", skipKey, skip[skipKey]))
 
@@ -415,12 +337,6 @@ func (dr *DependencyResolver) HandleResourceNodeStep(step RunStep, resNode strin
 
 	if step.Exec != "" {
 		if err := dr.ExecuteAndLogCommand(step, resNode, resNode, logs); err != nil {
-			LogErrorExit(fmt.Sprintf("Execution failed for step '%s' of resource '%s': ", step.Name, resNode), err)
-		}
-	}
-
-	if step.Chat != "" {
-		if err := dr.ExecuteAndLogChatCommand(step, resNode, resNode, logs); err != nil {
 			LogErrorExit(fmt.Sprintf("Execution failed for step '%s' of resource '%s': ", step.Name, resNode), err)
 		}
 	}
@@ -483,14 +399,14 @@ func (dr *DependencyResolver) HandleSearchCommand(resources []string) error {
 func (dr *DependencyResolver) HandleCategoryCommand(resources []string) error {
 	if len(resources) == 0 {
 		LogInfo("No categories provided")
-		Println("Usage: kdeps category [categories...]")
+		Println("Usage: runner category [categories...]")
 		return nil
 	}
 	for _, entry := range dr.Resources {
 		for _, category := range resources {
 			if entry.Category == category {
 				LogDebug("Listing resource in category: " + category)
-				Println("📂 " + entry.Id)
+				Println("ð " + entry.Id)
 			}
 		}
 	}
@@ -519,7 +435,7 @@ func (dr *DependencyResolver) HandleTreeListCommand(resources []string) error {
 func (dr *DependencyResolver) HandleIndexCommand() error {
 	for _, entry := range dr.Resources {
 		LogDebug("Indexing resource: " + entry.Id)
-		PrintMessage("📦 Id: %s\n📛 Name: %s\n📝 Description: %s\n🏷️  Category: %s\n🔗 Requirements: %v\n",
+		PrintMessage("ð¦ Id: %s\nð Name: %s\nð Description: %s\nð·ï¸  Category: %s\nð Requirements: %v\n",
 			entry.Id, entry.Name, entry.Desc, entry.Category, entry.Requires)
 		Println("---")
 	}

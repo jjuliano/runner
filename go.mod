@@ -1,4 +1,4 @@
-module github.com/kdeps/kdeps-mvp
+module github.com/jjuliano/runner
 
 go 1.22.5
 

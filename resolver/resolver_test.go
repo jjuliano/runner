@@ -76,6 +76,7 @@ func TestShowResourceEntry(t *testing.T) {
 	io.Copy(&output, r)
 
 	expectedOutput := "📦 Id: a\n📛 Name: A\n📝 Description: The first resource in the alphabetical order\n🏷️  Category: example\n🔗 Requirements: []\n"
+
 	if output.String() != expectedOutput {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output.String())
 	}

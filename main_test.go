@@ -37,7 +37,7 @@ func captureOutput(f func()) string {
 
 func initTestConfig(t *testing.T) (afero.Fs, string, string) {
 	fs := afero.NewOsFs()
-	tempDir := filepath.Join(os.TempDir(), "kdeps_test")
+	tempDir := filepath.Join(os.TempDir(), "runner_test")
 	localFile := filepath.Join(tempDir, "test_resources.yaml")
 	configFile := filepath.Join(tempDir, "test_config.yaml")
 
@@ -98,13 +98,13 @@ resources:
 		w.Write([]byte(localYAMLContent))
 	}))
 
-	kdepsConfigContent := []byte(`
+	runnerConfigContent := []byte(`
 workflows:
   - ` + server.URL + `
   - ` + localFile + `
 `)
 
-	afero.WriteFile(fs, configFile, []byte(kdepsConfigContent), 0644)
+	afero.WriteFile(fs, configFile, []byte(runnerConfigContent), 0644)
 	afero.WriteFile(fs, localFile, []byte(localYAMLContent), 0644)
 	defer server.Close()
 
