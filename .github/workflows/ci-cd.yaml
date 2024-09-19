@@ -79,9 +79,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
-          tag_name: ${{ env.COMMIT_HASH }}
+          tag_name: ""
           release_name: DEV Release ${{ env.COMMIT_HASH }}
           body: ${{ env.commits }}
+          generate_release_notes: true
 
       - name: Upload release artifact (Linux - amd64)
         id: upload-release-asset-linux-amd64
