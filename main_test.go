@@ -11,10 +11,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jjuliano/runner/resolver"
+	"github.com/jjuliano/runner/pkg/resolver"
 
 	"github.com/charmbracelet/log"
-	"github.com/kdeps/plugins/kdepexec"
+	"github.com/jjuliano/runner/pkg/kdepexec"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 )
