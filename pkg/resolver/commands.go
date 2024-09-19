@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/runner/pkg/plugins/expect"
-	"github.com/runner/pkg/plugins/kdepexec"
+	"github.com/runner/pkg/expect"
+	"github.com/runner/pkg/kdepexec"
 )
 
 // StepLog represents the structure of a log entry for a step.
