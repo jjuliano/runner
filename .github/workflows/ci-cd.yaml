@@ -79,7 +79,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
-          tag_name: ""
+          tag_name: "dev"
           release_name: DEV Release ${{ env.COMMIT_HASH }}
           body: ${{ env.commits }}
           generate_release_notes: true
