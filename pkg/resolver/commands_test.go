@@ -7,7 +7,7 @@ import (
     "testing"
 
     "github.com/charmbracelet/log"
-    "github.com/runner/pkg/kdepexec"
+    "github.com/jjuliano/runner/pkg/kdepexec"
     "github.com/spf13/afero"
     "gopkg.in/yaml.v2"
 )

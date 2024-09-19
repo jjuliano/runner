@@ -12,7 +12,7 @@ import (
 	"github.com/jjuliano/runner/pkg/resolver"
 
 	"github.com/charmbracelet/log"
-	"github.com/runner/pkg/kdepexec"
+	"github.com/jjuliano/runner/pkg/kdepexec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/runner/pkg/expect/process"
-	"github.com/runner/pkg/kdepexec"
+	"github.com/jjuliano/runner/pkg/expect/process"
+	"github.com/jjuliano/runner/pkg/kdepexec"
 )
 
 // addDefaultProtocol ensures the URL has a protocol. If missing, it adds "http://"

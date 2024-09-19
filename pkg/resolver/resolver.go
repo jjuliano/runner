@@ -5,7 +5,7 @@ import (
 
     "github.com/charmbracelet/log"
     "github.com/kdeps/kartographer/graph"
-    "github.com/runner/pkg/kdepexec"
+    "github.com/jjuliano/runner/pkg/kdepexec"
     "github.com/spf13/afero"
 )
 

@@ -2,8 +2,8 @@
 package expect
 
 import (
-	"github.com/runner/pkg/expect/check"
-	"github.com/runner/pkg/expect/process"
+	"github.com/jjuliano/runner/pkg/expect/check"
+	"github.com/jjuliano/runner/pkg/expect/process"
 )
 
 var (
