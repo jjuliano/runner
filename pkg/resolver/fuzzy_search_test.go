@@ -6,7 +6,7 @@ import (
     "testing"
 
     "github.com/charmbracelet/log"
-    "github.com/kdeps/plugins/kdepexec"
+    "github.com/runner/pkg/plugins/kdepexec"
     "github.com/lithammer/fuzzysearch/fuzzy"
     "github.com/spf13/afero"
 )

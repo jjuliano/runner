@@ -9,10 +9,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/jjuliano/runner/resolver"
+	"github.com/jjuliano/runner/pkg/resolver"
 
 	"github.com/charmbracelet/log"
-	"github.com/kdeps/plugins/kdepexec"
+	"github.com/runner/pkg/plugins/kdepexec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
