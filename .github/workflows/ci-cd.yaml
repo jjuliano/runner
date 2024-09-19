@@ -73,7 +73,7 @@ jobs:
 
       - name: Create release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -81,6 +81,7 @@ jobs:
         with:
           tag_name: "dev"
           release_name: DEV Release ${{ env.COMMIT_HASH }}
+          prerelease: true
           body: ${{ env.commits }}
           generate_release_notes: true
 
