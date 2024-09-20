@@ -84,7 +84,7 @@ func FormatLogEntry(entry StepLog) string {
 }
 
 func SourceEnvFile(envFilePath string) error {
-	LogInfo(fmt.Sprintf("Sourcing environment file from path: %s", envFilePath))
+	LogWarn(fmt.Sprintf("Sourcing environment file from path: %s", envFilePath))
 
 	file, err := os.Open(envFilePath)
 	if err != nil {
