@@ -105,7 +105,7 @@ jobs:
             if [ -f "./build/${GOOS}/${GOARCH}/${{ env.PROJECT_NAME }}" ]; then
               VERSION=${{ env.NEXT_VERSION }}
               PACKAGE_NAME="${{ env.PROJECT_NAME }}_${VERSION}_${GOOS}_${GOARCH}${file_ext}"
-              tar -czvf "$PACKAGE_NAME" -C ./build ./${{ env.PROJECT_NAME }}_${GOOS}_${GOARCH}
+              tar -czvf "$PACKAGE_NAME" -C ./build ./${GOOS}/${GOARCH}
             else
               echo "Skipping packaging for $GOOS/$GOARCH as the binary does not exist."
             fi
