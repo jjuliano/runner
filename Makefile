@@ -2,10 +2,8 @@
 PROJECT_NAME := runner
 TEST_REPORT := test-report.out
 COVERAGE_REPORT := coverage.out
-# Update PACKAGE_LIST to point to the correct package directory
 PACKAGE_LIST := ./
 
-# List of GOOS/GOARCH pairs for macOS, Windows, and Linux
 TARGETS := $(shell go tool dist list)
 
 # Default target
@@ -17,15 +15,29 @@ test:
 	@go test -v $(PACKAGE_LIST) | tee $(TEST_REPORT)
 	@go test -coverprofile=$(COVERAGE_REPORT) $(PACKAGE_LIST)
 
-# Build the project for all targets
-build: $(TARGETS)
-
-# Build for each target
-$(TARGETS):
-	@echo "Building for $@..."
-	@GOOS=$(word 1,$(subst /, ,$@)) GOARCH=$(word 2,$(subst /, ,$@)) \
-	mkdir -p ./build/$(PROJECT_NAME)_$(word 1,$(subst /, ,$@))_$(word 2,$(subst /, ,$@)) && \
-	go build -o ./build/$(PROJECT_NAME)_$(word 1,$(subst /, ,$@))_$(word 2,$(subst /, ,$@))/$(PROJECT_NAME) $(PACKAGE_LIST)
+build:
+	@for target in $(TARGETS); do \
+		GOOS=$$(echo $$target | cut -d '/' -f 1); \
+		GOARCH=$$(echo $$target | cut -d '/' -f 2); \
+		echo "Building for $$GOOS/$$GOARCH..."; \
+		mkdir -p ./build/$(PROJECT_NAME)_$$GOOS_$$GOARCH; \
+		if [ "$$GOOS" = "android" ]; then \
+			export CGO_ENABLED=1; \
+			export ANDROID_NDK_HOME=/android/ndk; \
+		elif [ "$$GOOS" = "ios" ]; then \
+			export CGO_ENABLED=1; \
+			export CC=clang; \
+		elif [ "$$GOOS" = "illumos" ]; then \
+			export CGO_ENABLED=1; \
+			export CC=gcc; \
+			export CFLAGS="-D_XOPEN_SOURCE=600"; \
+		else \
+			export CGO_ENABLED=0; \
+		fi; \
+		echo "Building for $$GOOS/$$GOARCH with CGO_ENABLED=$$CGO_ENABLED"; \
+		GOOS=$$GOOS GOARCH=$$GOARCH go build -o ./build/$(PROJECT_NAME)_$$GOOS_$$GOARCH/$(PROJECT_NAME) $(PACKAGE_LIST) || { echo "Skipping $$GOOS/$$GOARCH due to build errors."; continue; }; \
+		file ./build/$(PROJECT_NAME)_$$GOOS_$$GOARCH/$(PROJECT_NAME); \
+	done
 
 # Clean up generated files
 clean:
