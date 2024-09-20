@@ -43,33 +43,37 @@ jobs:
 
       - name: Package binary for Linux (amd64)
         run: |
-          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_amd64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_linux_amd64/${{ env.PROJECT_NAME }}
+          tar -czvf ${{ env.PROJECT_NAME }}_linux_amd64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_linux_amd64/${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for Linux (arm64)
         run: |
-          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_arm64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_linux_arm64/${{ env.PROJECT_NAME }}
+          tar -czvf ${{ env.PROJECT_NAME }}_linux_arm64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_linux_arm64/${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for macOS (amd64)
         run: |
-          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_darwin_amd64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_darwin_amd64/${{ env.PROJECT_NAME }}
+          tar -czvf ${{ env.PROJECT_NAME }}_darwin_amd64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_darwin_amd64/${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for macOS (arm64)
         run: |
-          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_darwin_arm64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_darwin_arm64/${{ env.PROJECT_NAME }}
+          tar -czvf ${{ env.PROJECT_NAME }}_darwin_arm64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_darwin_arm64/${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for Windows (amd64)
         run: |
-          cd ./build && zip -r ../${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_amd64.zip ./${{ env.PROJECT_NAME }}_windows_amd64/${{ env.PROJECT_NAME }}
+          cd ./build && zip -r ../${{ env.PROJECT_NAME }}_windows_amd64.zip ./${{ env.PROJECT_NAME }}_windows_amd64/${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
 
       - name: Package binary for Windows (arm64)
         run: |
-          cd ./build && zip -r ../${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_arm64.zip ./${{ env.PROJECT_NAME }}_windows_arm64/${{ env.PROJECT_NAME }}
+          cd ./build && zip -r ../${{ env.PROJECT_NAME }}_windows_arm64.zip ./${{ env.PROJECT_NAME }}_windows_arm64/${{ env.PROJECT_NAME }}
         working-directory: ${{ github.workspace }}
+
+      - name: Get current date
+        id: get_date
+        run: echo "RELEASE_DATE=$(date '+%b %d, %Y')" >> $GITHUB_ENV
 
       - name: Create release
         id: create_release
@@ -77,10 +81,9 @@ jobs:
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
           tag_name: "dev"
-          release_name: DEV Release ${{ env.COMMIT_HASH }}
+          release_name: "Dev Release (${{ env.RELEASE_DATE }})"
           prerelease: true
           body: ${{ env.commits }}
           generate_release_notes: true
@@ -91,11 +94,10 @@ jobs:
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_amd64.tar.gz
-          asset_name: ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_amd64.tar.gz
+          asset_path: ./${{ env.PROJECT_NAME }}_linux_amd64.tar.gz
+          asset_name: ${{ env.PROJECT_NAME }}_linux_amd64.tar.gz
           asset_content_type: application/gzip
 
       - name: Upload release artifact (Linux - arm64)
@@ -104,11 +106,10 @@ jobs:
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_arm64.tar.gz
-          asset_name: ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_linux_arm64.tar.gz
+          asset_path: ./${{ env.PROJECT_NAME }}_linux_arm64.tar.gz
+          asset_name: ${{ env.PROJECT_NAME }}_linux_arm64.tar.gz
           asset_content_type: application/gzip
 
       - name: Upload release artifact (macOS - amd64)
@@ -117,11 +118,10 @@ jobs:
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_darwin_amd64.tar.gz
-          asset_name: ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_darwin_amd64.tar.gz
+          asset_path: ./${{ env.PROJECT_NAME }}_darwin_amd64.tar.gz
+          asset_name: ${{ env.PROJECT_NAME }}_darwin_amd64.tar.gz
           asset_content_type: application/gzip
 
       - name: Upload release artifact (macOS - arm64)
@@ -130,11 +130,10 @@ jobs:
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_darwin_arm64.tar.gz
-          asset_name: ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_darwin_arm64.tar.gz
+          asset_path: ./${{ env.PROJECT_NAME }}_darwin_arm64.tar.gz
+          asset_name: ${{ env.PROJECT_NAME }}_darwin_arm64.tar.gz
           asset_content_type: application/gzip
 
       - name: Upload release artifact (Windows - amd64)
@@ -143,11 +142,10 @@ jobs:
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_amd64.zip
-          asset_name: ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_amd64.zip
+          asset_path: ./${{ env.PROJECT_NAME }}_windows_amd64.zip
+          asset_name: ${{ env.PROJECT_NAME }}_windows_amd64.zip
           asset_content_type: application/zip
 
       - name: Upload release artifact (Windows - arm64)
@@ -156,9 +154,8 @@ jobs:
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_arm64.zip
-          asset_name: ${{ env.PROJECT_NAME }}_${{ env.COMMIT_HASH }}_windows_arm64.zip
+          asset_path: ./${{ env.PROJECT_NAME }}_windows_arm64.zip
+          asset_name: ${{ env.PROJECT_NAME }}_windows_arm64.zip
           asset_content_type: application/zip
