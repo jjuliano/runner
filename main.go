@@ -150,11 +150,11 @@ func main() {
 
 	envFilePath := filepath.Join(workDir, ".runner_env")
 	if err := writeEnvToFile(envFilePath); err != nil {
-		logger.Fatalf("Failed to write environment to file: %v", err)
+		logger.Fatalf("Failed to write environment to file: %s - %v", envFilePath, err)
 	}
 
 	if err := resolver.SourceEnvFile(envFilePath); err != nil {
-		logger.Fatalf("Failed to source environment file: %v", err)
+		logger.Fatalf("Failed to source environment file: %s - %v", envFilePath, err)
 	}
 
 	session := createShellSession(logger)
