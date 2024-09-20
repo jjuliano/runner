@@ -435,7 +435,7 @@ func (dr *DependencyResolver) HandleTreeListCommand(resources []string) error {
 func (dr *DependencyResolver) HandleIndexCommand() error {
 	for _, entry := range dr.Resources {
 		LogDebug("Indexing resource: " + entry.Id)
-		PrintMessage("📦 Id: %s\n📛 Name: %s\n📝 Description: %s\n  Category: %s\n🔗 Requirements: %v\n",
+		PrintMessage("📦 Id: %s\n📛 Name: %s\n📝 Description: %s\n🏷️  Category: %s\n🔗 Requirements: %v\n",
 			entry.Id, entry.Name, entry.Desc, entry.Category, entry.Requires)
 		Println("---")
 	}
