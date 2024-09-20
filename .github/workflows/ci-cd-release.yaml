@@ -125,7 +125,7 @@ jobs:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          body_path: CHANGES.MD
+          body_path: CHANGES.md
           tag_name: "${{ env.NEXT_VERSION }}"
           name: "Release ${{ env.NEXT_VERSION }} (${{ env.RELEASE_DATE }})"
           files: |
