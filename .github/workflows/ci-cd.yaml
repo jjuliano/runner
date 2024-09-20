@@ -143,7 +143,6 @@ jobs:
           body: ${{ steps.changelog.outputs.changes }}
           tag_name: "dev"
           name: "DEV Release (${{ env.RELEASE_DATE }})"
-          body: ${{ env.commits }}
           files: |
               ./*.tar.gz
               ./*.zip
