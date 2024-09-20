@@ -1,9 +1,7 @@
 package resolver
 
 import (
-	"io/ioutil"
 	"net/http"
-	"os"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -94,25 +92,25 @@ func TestProcessSteps(t *testing.T) {
 	// Create a sample DependencyResolver instance
 	resolver := setupTestRunResolver()
 
-	// Create a temporary environment file with necessary variables
-	envFile, err := ioutil.TempFile("", ".runner_env")
-	if err != nil {
-		t.Fatalf("Failed to create temp env file: %v", err)
-	}
-	defer os.Remove(envFile.Name())
+	// // Create a temporary environment file with necessary variables
+	// envFile, err := ioutil.TempFile("", ".runner_env")
+	// if err != nil {
+	//	t.Fatalf("Failed to create temp env file: %v", err)
+	// }
+	// defer os.Remove(envFile.Name())
 
-	// Write mock environment variables to the file
-	_, err = envFile.WriteString("SOME_ENV_VAR=value\n")
-	if err != nil {
-		t.Fatalf("Failed to write to temp env file: %v", err)
-	}
-	envFile.Sync()  // Ensure the file is flushed before reading
-	envFile.Close() // Close the file to ensure it's written
+	// // Write mock environment variables to the file
+	// _, err = envFile.WriteString("SOME_ENV_VAR=value\n")
+	// if err != nil {
+	//	t.Fatalf("Failed to write to temp env file: %v", err)
+	// }
+	// envFile.Sync()  // Ensure the file is flushed before reading
+	// envFile.Close() // Close the file to ensure it's written
 
-	// Set the environment variable to the temp file path
-	if err := os.Setenv("RUNNER_ENV", envFile.Name()); err != nil {
-		t.Fatalf("Failed to set RUNNER_ENV: %v", err)
-	}
+	// // Set the environment variable to the temp file path
+	// if err := os.Setenv("RUNNER_ENV", envFile.Name()); err != nil {
+	//	t.Fatalf("Failed to set RUNNER_ENV: %v", err)
+	// }
 
 	// Define sample steps to be processed
 	steps := []interface{}{
@@ -125,7 +123,7 @@ func TestProcessSteps(t *testing.T) {
 	client := &http.Client{}
 
 	// Call the function being tested
-	err = resolver.ProcessNodeSteps(steps, "sampleType", "sampleResNode", client, &RunnerLogs{})
+	err := resolver.ProcessNodeSteps(steps, "sampleType", "sampleResNode", client, &RunnerLogs{})
 
 	// Check if there were any errors returned
 	if err != nil {
