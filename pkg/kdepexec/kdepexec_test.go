@@ -1,20 +1,22 @@
 package kdepexec
 
 import (
-	"strings"
 	"testing"
 )
 
 func TestExecuteCommand(t *testing.T) {
 	tests := []struct {
 		cmd      string
-		expected string
+		expected []string // Change to a slice to handle multiple expected outputs
 		exitCode int
 		hasError bool
 	}{
-		{"echo Hello, World!", "Hello, World!\n", 0, false},
-		{"invalid_command", "sh: invalid_command: command not found\n", 127, true}, // Existing test
-		{"exit 2", "", 2, true},
+		{"echo Hello, World!", []string{"Hello, World!\n"}, 0, false},
+		{"invalid_command", []string{
+			"sh: invalid_command: command not found\n",
+			"sh: 1: invalid_command: not found\n",
+		}, 127, true},
+		{"exit 2", []string{""}, 2, true},
 	}
 
 	for _, test := range tests {
@@ -27,15 +29,17 @@ func TestExecuteCommand(t *testing.T) {
 		resultChan := session.ExecuteCommand(test.cmd)
 		result := <-resultChan
 
-		// Handle the specific case for invalid command output
-		if test.cmd == "invalid_command" {
-			if !(result.Output == test.expected || strings.TrimSuffix(result.Output, "\n") == strings.TrimSuffix(test.expected, "\n")) {
-				t.Errorf("expected output %q, got %q", test.expected, result.Output)
+		// Check if the output matches any of the expected outputs
+		outputMatched := false
+		for _, expectedOutput := range test.expected {
+			if result.Output == expectedOutput {
+				outputMatched = true
+				break
 			}
-		} else {
-			if result.Output != test.expected {
-				t.Errorf("expected output %q, got %q", test.expected, result.Output)
-			}
+		}
+
+		if !outputMatched {
+			t.Errorf("expected one of %q, got %q", test.expected, result.Output)
 		}
 
 		if result.ExitCode != test.exitCode {
