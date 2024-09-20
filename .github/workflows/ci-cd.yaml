@@ -121,4 +121,6 @@ jobs:
           prerelease: true
           body: ${{ env.commits }}
           generate_release_notes: true
-          files: ./*.tar.gz ./*.zip
+          files: |
+              ./*.tar.gz
+              ./*.zip
