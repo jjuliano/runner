@@ -3,13 +3,13 @@
 
 ## Features
 
-- **🛠 Simplified Automation**: Replace unmaintainable shell scripts with a structured, YAML-based approach.
-- **🚀 Enhanced for Developer Experience (DX)**: Focus on what matters—your workflows. **runner** abstracts away the complexity of shell scripts, orchestrating tasks in a developer-friendly YAML format.
-- **🔄 GitOps-Ready**: Store your scripts and workflows in version control for a single source of truth.
+- **🛠 Simplified Automation**: Avoid piles of overly complex unmaintainable shell scripts. Use a structured and maintainable YAML configurations, making complex workflows team friendly, easy to collaborate, manage and understand.
+- **🚀 Optimized for Developer Experience (DX)**: Simplify the use of automation workflows for your team, whether it's compiling code & running services in Kubernetes, or managing deployments, making day-to-day tasks more time-saving, efficient and accessible.
+- **🔄 GitOps-Ready**: Store your scripts and workflows in version control as a single source of truth, enabling seamless tracking, collaboration, and deployment.
 - **⚙️ CI/CD Integration**: Deploy **runner** within Docker images or as part of your CI/CD pipelines.
 - **🔧 Language Agnostic**: Use 99% YAML configurations, and shell scripts for execution. No Python or JavaScript required.
-- **🌍 Cross-Platform & Multiarchitecture**: Supporting over 40 architectures, **runner** seamlessly adapts whether you’re deploying on cloud infrastructure, Kubernetes clusters, bare-metal machines, or lightweight devices like Raspberry Pi and Arduino.
-- **🌐 HTTP Resource Support**: Include YAML resources from local files or external URLs in your workflows.
+- **🌍 Cross-Platform & Multiarchitecture**: Supporting over 40 architectures, **runner** seamlessly adapts whether you’re deploying on cloud infrastructure, Kubernetes clusters, bare-metal machines, or lightweight IoT devices like Raspberry Pi and Arduino.
+- **🌐 HTTPs Resource Support**: Include YAML resources from local files or external URLs in your workflows, which makes it easier to share and reuse other workflows.
 
 ## Quick Start Guide
 
