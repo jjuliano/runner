@@ -1,6 +1,8 @@
 package kdepexec
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -25,6 +27,26 @@ func TestExecuteCommand(t *testing.T) {
 			t.Fatalf("Failed to create shell session: %v", err)
 		}
 		defer session.Close()
+
+		// Create a temporary environment file with necessary variables
+		envFile, err := ioutil.TempFile("", ".runner_env")
+		if err != nil {
+			t.Fatalf("Failed to create temp env file: %v", err)
+		}
+		defer os.Remove(envFile.Name())
+
+		// Write mock environment variables to the file
+		_, err = envFile.WriteString("SOME_ENV_VAR=value\n")
+		if err != nil {
+			t.Fatalf("Failed to write to temp env file: %v", err)
+		}
+		envFile.Sync()  // Ensure the file is flushed before reading
+		envFile.Close() // Close the file to ensure it's written
+
+		// Set the environment variable to the temp file path
+		if err := os.Setenv("RUNNER_ENV", envFile.Name()); err != nil {
+			t.Fatalf("Failed to set RUNNER_ENV: %v", err)
+		}
 
 		resultChan := session.ExecuteCommand(test.cmd)
 		result := <-resultChan
