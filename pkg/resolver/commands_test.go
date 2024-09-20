@@ -30,7 +30,7 @@ func setupTestRunResolver() *DependencyResolver {
 
 	// Source the .runner_env file
 	if err := sourceEnvFile(envFilePath); err != nil {
-		logger.Fatalf("Failed to source environment file: %v", err)
+		logger.Fatalf("Failed to source environment file: %s - %v", envFilePath, err)
 	}
 
 	logger := log.New(nil)
