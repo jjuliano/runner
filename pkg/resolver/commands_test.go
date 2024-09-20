@@ -60,8 +60,8 @@ func setupTestRunResolver() *DependencyResolver {
 						"skip": []string{"CMD:bre1w"},
 						"env": []map[string]interface{}{
 							{
-								"name":     "HELLO",
-								"kdepexec": "echo 'hello world'",
+								"name": "HELLO",
+								"exec": "echo 'hello world'",
 							},
 							{
 								"name":  "HELLO2",
