@@ -1,9 +1,11 @@
-name: CI/CD - Nightly
+name: CI/CD - Release
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    types: [closed]
 
 permissions:
   contents: write
@@ -101,7 +103,7 @@ jobs:
             if [ "$GOOS" = "windows" ]; then
               file_ext=".zip"
             fi
-            if [ -f "./build/${GOOS}/${GOARCH}/${{ env.PROJECT_NAME }}" ]; then
+            if [ -f "./build/${{ env.PROJECT_NAME }}_${GOOS}_${GOARCH}/${{ env.PROJECT_NAME }}" ]; then
               VERSION=${{ env.NEXT_VERSION }}
               PACKAGE_NAME="${{ env.PROJECT_NAME }}_${VERSION}_${GOOS}_${GOARCH}${file_ext}"
               tar -czvf "$PACKAGE_NAME" -C ./build ./${{ env.PROJECT_NAME }}_${GOOS}_${GOARCH}
@@ -115,16 +117,25 @@ jobs:
         id: get_date
         run: echo "RELEASE_DATE=$(date '+%b %d, %Y')" >> $GITHUB_ENV
 
+      - name: Determine next version
+        id: determine_version
+        run: |
+          NEXT_VERSION="0.1.0"
+          if [[ -n "${{ env.commits }}" ]]; then
+            NEXT_VERSION="0.1.1"  # Update this based on your logic
+          fi
+          echo "NEXT_VERSION=${NEXT_VERSION}" >> $GITHUB_ENV
+
       - name: Create release
+        if: github.event.action == 'closed' && github.event.pull_request.merged == true
         id: create_release
         uses: softprops/action-gh-release@v2
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "dev"
-          name: "Nightly Release (${{ env.RELEASE_DATE }})"
-          prerelease: true
+          tag_name: "${{ env.NEXT_VERSION }}"
+          name: "Release ${{ env.NEXT_VERSION }} (${{ env.RELEASE_DATE }})"
           body: ${{ env.commits }}
           generate_release_notes: true
           files: |

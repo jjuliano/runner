@@ -16,28 +16,30 @@ test:
 	@go test -coverprofile=$(COVERAGE_REPORT) $(PACKAGE_LIST)
 
 build:
+	@mkdir -p ./build
 	@for target in $(TARGETS); do \
-		GOOS=$$(echo $$target | cut -d '/' -f 1); \
-		GOARCH=$$(echo $$target | cut -d '/' -f 2); \
-		echo "Building for $$GOOS/$$GOARCH..."; \
-		mkdir -p ./build/$(PROJECT_NAME)_$$GOOS_$$GOARCH; \
-		if [ "$$GOOS" = "android" ]; then \
-			export CGO_ENABLED=1; \
-			export ANDROID_NDK_HOME=/android/ndk; \
-		elif [ "$$GOOS" = "ios" ]; then \
-			export CGO_ENABLED=1; \
-			export CC=clang; \
-		elif [ "$$GOOS" = "illumos" ]; then \
-			export CGO_ENABLED=1; \
-			export CC=gcc; \
-			export CFLAGS="-D_XOPEN_SOURCE=600"; \
-		else \
-			export CGO_ENABLED=0; \
+		X_OS=$$(echo $$target | cut -d '/' -f 1); \
+		X_ARCH=$$(echo $$target | cut -d '/' -f 2); \
+		if [ "$$target" = "js/wasm" ]; then \
+			X_OS="wasm"; \
+			X_ARCH="js"; \
 		fi; \
-		echo "Building for $$GOOS/$$GOARCH with CGO_ENABLED=$$CGO_ENABLED"; \
-		GOOS=$$GOOS GOARCH=$$GOARCH go build -o ./build/$(PROJECT_NAME)_$$GOOS_$$GOARCH/$(PROJECT_NAME) $(PACKAGE_LIST) || { echo "Skipping $$GOOS/$$GOARCH due to build errors."; continue; }; \
-		file ./build/$(PROJECT_NAME)_$$GOOS_$$GOARCH/$(PROJECT_NAME); \
+		if [ -z "$$X_OS" ] || [ -z "$$X_ARCH" ]; then \
+			echo "Invalid target: $$target resulted in X_OS=$$X_OS and X_ARCH=$$X_ARCH"; \
+			continue; \
+		fi; \
+		echo "Building for $$X_OS/$$X_ARCH..."; \
+		mkdir -p ./build/$(PROJECT_NAME)_$$X_OS_$$X_ARCH || { \
+			echo "Failed to create directory ./build/$(PROJECT_NAME)_$$X_OS_$$X_ARCH"; \
+			continue; \
+		}; \
+		GOOS=$$X_OS GOARCH=$$X_ARCH go build -o ./build/$$X_OS/$$X_ARCH/$(PROJECT_NAME) $(PACKAGE_LIST) || { \
+			echo "Build failed for $$X_OS/$$X_ARCH"; \
+			continue; \
+		}; \
+		echo "Build succeeded for $$X_OS/$$X_ARCH"; \
 	done
+
 
 # Clean up generated files
 clean:
