@@ -52,6 +52,7 @@ func writeEnvToFile(envFilePath string) error {
 	if err != nil {
 		return err
 	}
+	envFile.Sync()
 	defer envFile.Close()
 
 	os.Setenv("RUNNER_ENV", envFilePath)
