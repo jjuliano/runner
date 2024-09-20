@@ -95,7 +95,7 @@ func TestProcessSteps(t *testing.T) {
 	resolver := setupTestRunResolver()
 
 	// Create a temporary environment file with necessary variables
-	envFile, err := ioutil.TempFile("", "envfile")
+	envFile, err := ioutil.TempFile("", ".runner_env")
 	if err != nil {
 		t.Fatalf("Failed to create temp env file: %v", err)
 	}
