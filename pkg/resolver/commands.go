@@ -84,38 +84,44 @@ func FormatLogEntry(entry StepLog) string {
 }
 
 func SourceEnvFile(envFilePath string) error {
-	fmt.Printf("Sourcing env file from path: %s\n", envFilePath) // Log the file path
+	LogInfo(fmt.Sprintf("Sourcing environment file from path: %s", envFilePath))
 
 	file, err := os.Open(envFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to open env file: %v", err)
+		return LogError(fmt.Sprintf("Failed to open environment file: %s - %v", envFilePath, err), err)
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			fmt.Printf("Failed to close env file: %v\n", err) // Use fmt.Printf for now
+			LogError(fmt.Sprintf("Failed to close environment file: %s - %v", envFilePath, err), err)
+		} else {
+			LogInfo(fmt.Sprintf("Successfully closed environment file: %s", envFilePath))
 		}
 	}(file)
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		fmt.Printf("Processing line: %s\n", line) // Log each line being processed
+		LogDebug(fmt.Sprintf("Processing line: %s", line))
+
 		parts := strings.SplitN(line, "=", 2)
 		if len(parts) != 2 {
-			return fmt.Errorf("invalid environment variable declaration: %s", line)
+			return LogError(fmt.Sprintf("Invalid environment variable declaration: %s in file: %s", line, envFilePath), err)
 		}
+
 		key := parts[0]
 		value := strings.Trim(parts[1], "\"")
 		if err := os.Setenv(key, value); err != nil {
-			return fmt.Errorf("failed to set environment variable %s: %v", key, err)
+			return LogError(fmt.Sprintf("Failed to set environment variable %s: %v - %s", key, err, envFilePath), err)
 		}
+		LogInfo(fmt.Sprintf("Set environment variable %s=%s", key, value))
 	}
 
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error reading env file: %v", err)
+		return LogError(fmt.Sprintf("Error reading environment file: %s - %v", envFilePath, err), err)
 	}
 
+	LogInfo(fmt.Sprintf("Successfully sourced environment file: %s", envFilePath))
 	return nil
 }
 
