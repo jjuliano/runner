@@ -5,7 +5,7 @@ COVERAGE_REPORT = coverage.out
 PACKAGE_LIST = ./...
 
 # List of GOOS/GOARCH pairs for macOS, Windows, and Linux
-TARGETS := $(filter darwin/amd64 linux/amd64 windows/amd64 darwin/arm64 linux/arm64 windows/arm64, $(shell go tool dist list))
+TARGETS := $(shell go tool dist list)
 
 # Default target
 all: test

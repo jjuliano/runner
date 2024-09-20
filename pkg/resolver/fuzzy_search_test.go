@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/log"
-	"github.com/jjuliano/runner/pkg/kdepexec"
+	"github.com/jjuliano/runner/pkg/runnerexec"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/spf13/afero"
 )
@@ -25,7 +25,7 @@ func (dr *DependencyResolver) MockShowResourceEntry(res string) string {
 // TestDependencyResolver_FuzzySearch tests the FuzzySearch method.
 func TestDependencyResolver_FuzzySearch(t *testing.T) {
 	logger := log.New(nil)
-	session, err := kdepexec.NewShellSession()
+	session, err := runnerexec.NewShellSession()
 	if err != nil {
 		logger.Fatalf("Failed to create shell session: %v", err)
 	}

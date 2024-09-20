@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/jjuliano/runner/pkg/expect/process"
-	"github.com/jjuliano/runner/pkg/kdepexec"
+	"github.com/jjuliano/runner/pkg/runnerexec"
 )
 
 // addDefaultProtocol ensures the URL has a protocol. If missing, it adds "http://"
@@ -30,7 +30,7 @@ func CheckExpectations(output string, exitCode int, expectations []string, clien
 		// Check if the expectation is a command to execute
 		if strings.HasPrefix(expectation, "CMD:") {
 			cmd := strings.TrimPrefix(expectation, "CMD:")
-			path, err := kdepexec.Which(cmd)
+			path, err := runnerexec.Which(cmd)
 			if isNegation {
 				if err == nil {
 					return fmt.Errorf("unexpected executable path '%s' exists", path)

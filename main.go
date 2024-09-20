@@ -10,7 +10,7 @@ import (
 	"syscall"
 
 	"github.com/charmbracelet/log"
-	"github.com/jjuliano/runner/pkg/kdepexec"
+	"github.com/jjuliano/runner/pkg/runnerexec"
 	"github.com/jjuliano/runner/pkg/resolver"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -183,15 +183,15 @@ func signalCleanup(logger *log.Logger, workDir string) {
 	}()
 }
 
-func createShellSession(logger *log.Logger) *kdepexec.ShellSession {
-	session, err := kdepexec.NewShellSession()
+func createShellSession(logger *log.Logger) *runnerexec.ShellSession {
+	session, err := runnerexec.NewShellSession()
 	if err != nil {
 		logger.Fatalf("Failed to create shell session: %v", err)
 	}
 	return session
 }
 
-func createDependencyResolver(logger *log.Logger, workDir string, session *kdepexec.ShellSession) *resolver.DependencyResolver {
+func createDependencyResolver(logger *log.Logger, workDir string, session *runnerexec.ShellSession) *resolver.DependencyResolver {
 	dr, err := resolver.NewGraphResolver(afero.NewOsFs(), logger, workDir, session)
 	if err != nil {
 		logger.Fatalf("Failed to create dependency resolver: %v", err)

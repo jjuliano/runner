@@ -6,7 +6,7 @@ on:
       - main
 
 permissions:
-  contents: write  # This gives the GITHUB_TOKEN the necessary permissions
+  contents: write
 
 jobs:
   build:
@@ -38,37 +38,80 @@ jobs:
       - name: Run tests
         run: make test
 
-      - name: Build for Mac, Linux and Windows
-        run: make build
-
-      - name: Package binary for Linux (amd64)
+      - name: Build for multiple platforms
         run: |
-          tar -czvf ${{ env.PROJECT_NAME }}_linux_amd64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_linux_amd64/${{ env.PROJECT_NAME }}
-        working-directory: ${{ github.workspace }}
+          platforms=(
+            "aix/ppc64"
+            "android/386"
+            "android/amd64"
+            "android/arm"
+            "android/arm64"
+            "darwin/amd64"
+            "darwin/arm64"
+            "dragonfly/amd64"
+            "freebsd/386"
+            "freebsd/amd64"
+            "freebsd/arm"
+            "freebsd/arm64"
+            "freebsd/riscv64"
+            "illumos/amd64"
+            "ios/amd64"
+            "ios/arm64"
+            "js/wasm"
+            "linux/386"
+            "linux/amd64"
+            "linux/arm"
+            "linux/arm64"
+            "linux/loong64"
+            "linux/mips"
+            "linux/mips64"
+            "linux/mips64le"
+            "linux/mipsle"
+            "linux/ppc64"
+            "linux/ppc64le"
+            "linux/riscv64"
+            "linux/s390x"
+            "netbsd/386"
+            "netbsd/amd64"
+            "netbsd/arm"
+            "netbsd/arm64"
+            "openbsd/386"
+            "openbsd/amd64"
+            "openbsd/arm"
+            "openbsd/arm64"
+            "openbsd/ppc64"
+            "plan9/386"
+            "plan9/amd64"
+            "plan9/arm"
+            "solaris/amd64"
+            "wasip1/wasm"
+            "windows/386"
+            "windows/amd64"
+            "windows/arm"
+            "windows/arm64"
+          )
+          for platform in "${platforms[@]}"; do
+            GOOS=${platform%/*}
+            GOARCH=${platform#*/}
+            output_name='./build/${{ env.PROJECT_NAME }}_'${GOOS}'_'${GOARCH}
+            if [ $GOOS = "windows" ]; then
+              output_name+='.exe'
+            fi
+            mkdir -p $(dirname $output_name)
+            GOOS=$GOOS GOARCH=$GOARCH go build -o $output_name ./...
+          done
 
-      - name: Package binary for Linux (arm64)
+      - name: Package binaries
         run: |
-          tar -czvf ${{ env.PROJECT_NAME }}_linux_arm64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_linux_arm64/${{ env.PROJECT_NAME }}
-        working-directory: ${{ github.workspace }}
-
-      - name: Package binary for macOS (amd64)
-        run: |
-          tar -czvf ${{ env.PROJECT_NAME }}_darwin_amd64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_darwin_amd64/${{ env.PROJECT_NAME }}
-        working-directory: ${{ github.workspace }}
-
-      - name: Package binary for macOS (arm64)
-        run: |
-          tar -czvf ${{ env.PROJECT_NAME }}_darwin_arm64.tar.gz -C ./build ./${{ env.PROJECT_NAME }}_darwin_arm64/${{ env.PROJECT_NAME }}
-        working-directory: ${{ github.workspace }}
-
-      - name: Package binary for Windows (amd64)
-        run: |
-          cd ./build && zip -r ../${{ env.PROJECT_NAME }}_windows_amd64.zip ./${{ env.PROJECT_NAME }}_windows_amd64/${{ env.PROJECT_NAME }}
-        working-directory: ${{ github.workspace }}
-
-      - name: Package binary for Windows (arm64)
-        run: |
-          cd ./build && zip -r ../${{ env.PROJECT_NAME }}_windows_arm64.zip ./${{ env.PROJECT_NAME }}_windows_arm64/${{ env.PROJECT_NAME }}
+          for platform in "${platforms[@]}"; do
+            GOOS=${platform%/*}
+            GOARCH=${platform#*/}
+            file_ext=".tar.gz"
+            if [ $GOOS = "windows" ]; then
+              file_ext=".zip"
+            fi
+            tar -czvf ${{ env.PROJECT_NAME }}_${GOOS}_${GOARCH}${file_ext} -C ./build ./${{ env.PROJECT_NAME }}_${GOOS}_${GOARCH}
+          done
         working-directory: ${{ github.workspace }}
 
       - name: Get current date
@@ -87,10 +130,4 @@ jobs:
           prerelease: true
           body: ${{ env.commits }}
           generate_release_notes: true
-          files: |
-              ./${{ env.PROJECT_NAME }}_linux_amd64.tar.gz
-              ./${{ env.PROJECT_NAME }}_linux_arm64.tar.gz
-              ./${{ env.PROJECT_NAME }}_darwin_amd64.tar.gz
-              ./${{ env.PROJECT_NAME }}_darwin_arm64.tar.gz
-              ./${{ env.PROJECT_NAME }}_windows_amd64.tar.gz
-              ./${{ env.PROJECT_NAME }}_windows_arm64.tar.gz
+          files: ./build/*.tar.gz ./build/*.zip

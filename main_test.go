@@ -14,7 +14,7 @@ import (
 	"github.com/jjuliano/runner/pkg/resolver"
 
 	"github.com/charmbracelet/log"
-	"github.com/jjuliano/runner/pkg/kdepexec"
+	"github.com/jjuliano/runner/pkg/runnerexec"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 )
@@ -118,7 +118,7 @@ workflows:
 		os.Exit(1)
 	}
 
-	session, err := kdepexec.NewShellSession()
+	session, err := runnerexec.NewShellSession()
 	if err != nil {
 		logger.Fatalf("Failed to create shell session: %v", err)
 	}

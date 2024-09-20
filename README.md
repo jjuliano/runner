@@ -123,7 +123,7 @@ env:
   - name: "FILE_CONTENTS"
     file: "$RUNNER_PARAMS1"
   - name: "FILE_TYPE"
-    exec: "file $KDEPS_PARAMS1"
+    exec: "file $RUNNER_PARAMS1"
   - name: "HELLO"
     value: "WORLD"
   - name: "GH_TOKEN"

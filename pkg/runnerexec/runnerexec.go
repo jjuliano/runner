@@ -1,4 +1,4 @@
-package kdepexec
+package runnerexec
 
 import (
 	"bytes"

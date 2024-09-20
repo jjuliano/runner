@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/log"
-	"github.com/jjuliano/runner/pkg/kdepexec"
+	"github.com/jjuliano/runner/pkg/runnerexec"
 	"github.com/spf13/afero"
 )
 
 func TestLoadResourceEntries(t *testing.T) {
 	logger := log.New(nil)
-	session, err := kdepexec.NewShellSession()
+	session, err := runnerexec.NewShellSession()
 	if err != nil {
 		logger.Fatalf("Failed to create shell session: %v", err)
 	}
@@ -82,7 +82,7 @@ resources:
 
 func TestLoadResourceEntries_CircularDependency(t *testing.T) {
 	logger := log.New(nil)
-	session, err := kdepexec.NewShellSession()
+	session, err := runnerexec.NewShellSession()
 	if err != nil {
 		logger.Fatalf("Failed to create shell session: %v", err)
 	}

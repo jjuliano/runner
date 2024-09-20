@@ -9,7 +9,7 @@ import (
     "sync"
 
     "github.com/jjuliano/runner/pkg/expect"
-    "github.com/jjuliano/runner/pkg/kdepexec"
+    "github.com/jjuliano/runner/pkg/runnerexec"
 )
 
 // StepLog represents the structure of a log entry for a step.
@@ -182,7 +182,7 @@ func (dr *DependencyResolver) ProcessResourceNodeEnvVarDeclarations(envVars []En
         var value string
 
         if envVar.Exec != "" {
-            var result kdepexec.CommandResult
+            var result runnerexec.CommandResult
             var ok bool
 
             resultChan := dr.ShellSession.ExecuteCommand(envVar.Exec)
@@ -228,7 +228,7 @@ func (dr *DependencyResolver) ExecuteAndLogCommand(step RunStep, resName string,
         LogErrorExit(fmt.Sprintf("Failed to set environment variables for step: '%s'", step.Name), err)
     }
 
-    var result kdepexec.CommandResult
+    var result runnerexec.CommandResult
     var ok bool
 
     execResultChan := dr.ShellSession.ExecuteCommand(step.Exec)
