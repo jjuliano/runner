@@ -320,37 +320,37 @@ func TestIndexCommand(t *testing.T) {
 📝 Description: Long description 1
 🏷️  Category: cat1
 🔗 Requirements: [res2]
----
+
 📦 Id: res2
 📛 Name: Id 2
 📝 Description: Long description 2
 🏷️  Category: cat2
 🔗 Requirements: [res3]
----
+
 📦 Id: res3
 📛 Name: Id 3
 📝 Description: Long description 3
 🏷️  Category: cat3
 🔗 Requirements: []
----
+
 📦 Id: res1
 📛 Name: Id 1
 📝 Description: Long description 1
 🏷️  Category: cat1
 🔗 Requirements: [res2]
----
+
 📦 Id: res2
 📛 Name: Id 2
 📝 Description: Long description 2
 🏷️  Category: cat2
 🔗 Requirements: [res3]
----
+
 📦 Id: res3
 📛 Name: Id 3
 📝 Description: Long description 3
 🏷️  Category: cat3
 🔗 Requirements: []
----
+
 `
 	if !strings.Contains(output, expectedOutput) {
 		t.Errorf("Expected output:\n%s\nGot:\n%s", expectedOutput, output)

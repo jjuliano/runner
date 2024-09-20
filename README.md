@@ -19,13 +19,14 @@ Create a `runner.yml` file that lists the necessary resources for your workflow.
 ```yaml
 workflows:
   - resources/github.yaml
+  - resources/helmcharts.yaml
   - resources/auth.yaml
   - resources/database.yaml
   - resources/backend.yaml
   - resources/redis.yaml
   - resources/kafka.yaml
   - resources/docker.yaml
-  - https://example.com/runner.yaml
+  - https://example.com/frontend.yaml
 ```
 
 ### Step 2: Create Your Resources
@@ -96,10 +97,10 @@ Negate any condition by prefixing it with `!`.
 
 ```yaml
 check:
-  - "ENV:SHOULD_EXIST"
+  - "ENV:THIS_PREFLIGHT_ENV_VAR_SHOULD_EXIST"
   - "!ENV:SHOULD_NOT_EXIST"
 expect:
-  - "CMD:command_should_be_available"
+  - "CMD:this_postflight_command_check_should_be_available_in_path"
 skip:
   - "FILE:/skip/if/this/file/exists.txt"
 ```
@@ -129,7 +130,7 @@ env:
     input: "Please enter the GH_TOKEN:"
 ```
 
-Variables can also be appended directly to `$RUNNER_ENV`.
+Variables can also be appended directly to `$RUNNER_ENV`. i.e. `echo FOO='bar' >> $RUNNER_ENV`
 
 ### Passing Optional Parameters
 

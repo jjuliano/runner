@@ -22,15 +22,15 @@ var (
 	params  string
 )
 
-func initConfig() {
-	log.Info("Initializing configuration...")
+func initConfig(logger *log.Logger) {
+	logger.Debug("Initializing configuration...")
 
 	viper.SetConfigName("runner")
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Workflow file 'runner.yaml' not found in the current directory.")
+		logger.Fatalf("Workflow file 'runner.yaml' not found in the current directory.")
 	}
 
 	if params != "" {
@@ -91,7 +91,7 @@ func writeEnvToFile(envFilePath string) error {
 func createRootCmd(dr *resolver.DependencyResolver) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "runner",
-		Short: "A simple graph-based orchestrated runner",
+		Short: "a graph-based orchestrator",
 	}
 	rootCmd.PersistentFlags().StringVar(&params, "params", "", "extra parameters, semi-colon separated")
 
@@ -136,9 +136,9 @@ func handleCommand(fn func([]string) error, args []string) {
 }
 
 func main() {
-	initConfig()
-
 	logger := initLogger()
+
+	initConfig(logger)
 
 	workDir := createWorkDir()
 	defer func() {

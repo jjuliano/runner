@@ -9,7 +9,7 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.go]
-indent_style = tab
+indent_style = space
 
 [{Makefile,*.mk}]
 indent_style = tab
