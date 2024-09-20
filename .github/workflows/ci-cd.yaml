@@ -101,7 +101,11 @@ jobs:
             if [ $GOOS = "windows" ]; then
               file_ext=".zip"
             fi
-            tar -czvf ${{ env.PROJECT_NAME }}_${GOOS}_${GOARCH}${file_ext} -C ./build ./${{ env.PROJECT_NAME }}_${GOOS}_${GOARCH}
+            if [ -f "./build/${{ env.PROJECT_NAME }}_${GOOS}_${GOARCH}/${{ env.PROJECT_NAME }}" ]; then
+              tar -czvf ${{ env.PROJECT_NAME }}_${GOOS}_${GOARCH}${file_ext} -C ./build ./${{ env.PROJECT_NAME }}_${GOOS}_${GOARCH}
+            else
+              echo "Skipping packaging for $$GOOS/$$GOARCH as the binary does not exist."
+            fi
           done
         working-directory: ${{ github.workspace }}
 
