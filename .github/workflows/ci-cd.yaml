@@ -87,75 +87,10 @@ jobs:
           prerelease: true
           body: ${{ env.commits }}
           generate_release_notes: true
-
-      - name: Upload release artifact (Linux - amd64)
-        id: upload-release-asset-linux-amd64
-        uses: actions/upload-release-asset@v1
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_linux_amd64.tar.gz
-          asset_name: ${{ env.PROJECT_NAME }}_linux_amd64.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload release artifact (Linux - arm64)
-        id: upload-release-asset-linux-arm64
-        uses: actions/upload-release-asset@v1
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_linux_arm64.tar.gz
-          asset_name: ${{ env.PROJECT_NAME }}_linux_arm64.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload release artifact (macOS - amd64)
-        id: upload-release-asset-macOS-amd64
-        uses: actions/upload-release-asset@v1
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_darwin_amd64.tar.gz
-          asset_name: ${{ env.PROJECT_NAME }}_darwin_amd64.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload release artifact (macOS - arm64)
-        id: upload-release-asset-macOS-arm64
-        uses: actions/upload-release-asset@v1
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_darwin_arm64.tar.gz
-          asset_name: ${{ env.PROJECT_NAME }}_darwin_arm64.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload release artifact (Windows - amd64)
-        id: upload-release-asset-windows-amd64
-        uses: actions/upload-release-asset@v1
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_windows_amd64.zip
-          asset_name: ${{ env.PROJECT_NAME }}_windows_amd64.zip
-          asset_content_type: application/zip
-
-      - name: Upload release artifact (Windows - arm64)
-        id: upload-release-asset-windows-arm64
-        uses: actions/upload-release-asset@v1
-        env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PROJECT_NAME }}_windows_arm64.zip
-          asset_name: ${{ env.PROJECT_NAME }}_windows_arm64.zip
-          asset_content_type: application/zip
+          files: |
+              ./${{ env.PROJECT_NAME }}_linux_amd64.tar.gz
+              ./${{ env.PROJECT_NAME }}_linux_arm64.tar.gz
+              ./${{ env.PROJECT_NAME }}_darwin_amd64.tar.gz
+              ./${{ env.PROJECT_NAME }}_darwin_arm64.tar.gz
+              ./${{ env.PROJECT_NAME }}_windows_amd64.tar.gz
+              ./${{ env.PROJECT_NAME }}_windows_arm64.tar.gz
