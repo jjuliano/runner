@@ -106,6 +106,7 @@ func TestProcessSteps(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to write to temp env file: %v", err)
 	}
+	envFile.Sync()  // Ensure the file is flushed before reading
 	envFile.Close() // Close the file to ensure it's written
 
 	// Set the environment variable to the temp file path
