@@ -20,10 +20,6 @@ build:
 	@for target in $(TARGETS); do \
 		X_OS=$$(echo $$target | cut -d '/' -f 1); \
 		X_ARCH=$$(echo $$target | cut -d '/' -f 2); \
-		if [ "$$target" = "js/wasm" ]; then \
-			X_OS="wasm"; \
-			X_ARCH="js"; \
-		fi; \
 		if [ -z "$$X_OS" ] || [ -z "$$X_ARCH" ]; then \
 			echo "Invalid target: $$target resulted in X_OS=$$X_OS and X_ARCH=$$X_ARCH"; \
 			continue; \

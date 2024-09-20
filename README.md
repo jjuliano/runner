@@ -3,10 +3,13 @@
 
 ## Features
 
-- **Simplified Automation**: Replace unmaintainable shell scripts with a structured, YAML-based approach.
-- **GitOps-Ready**: Store your scripts and workflows in version control for a single source of truth.
-- **CI/CD Integration**: Deploy **runner** within Docker images or as part of your CI/CD pipelines.
-- **Language Agnostic**: Use 99% YAML configurations, and shell scripts for execution. No Python or JavaScript required.
+- **🛠 Simplified Automation**: Replace unmaintainable shell scripts with a structured, YAML-based approach.
+- **🚀 Enhanced for Developer Experience (DX)**: Focus on what matters—your workflows. **runner** abstracts away the complexity of shell scripts, orchestrating tasks in a developer-friendly YAML format.
+- **🔄 GitOps-Ready**: Store your scripts and workflows in version control for a single source of truth.
+- **⚙️ CI/CD Integration**: Deploy **runner** within Docker images or as part of your CI/CD pipelines.
+- **🔧 Language Agnostic**: Use 99% YAML configurations, and shell scripts for execution. No Python or JavaScript required.
+- **🌍 Cross-Platform & Multiarchitecture**: Supporting over 40 architectures, **runner** seamlessly adapts whether you’re deploying on cloud infrastructure, Kubernetes clusters, bare-metal machines, or lightweight devices like Raspberry Pi and Arduino.
+- **🌐 HTTP Resource Support**: Include YAML resources from local files or external URLs in your workflows.
 
 ## Quick Start Guide
 
@@ -139,7 +142,7 @@ You can pass optional parameters using the `--params` flag. The format is `--par
 ## CLI Commands
 
 ```
-A graph-based orchestrator for workflows.
+A graph-based orchestrator for workflows
 
 Usage:
   runner [command]
@@ -158,7 +161,7 @@ Available Commands:
   tree-list   List dependencies in a tree-like format
 
 Flags:
-      --config string   Config file (default is runner.yaml)
+
   -h, --help            Display help for runner
       --params string   Extra parameters (semi-colon separated)
 

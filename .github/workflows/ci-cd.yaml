@@ -38,6 +38,12 @@ jobs:
       - name: Run tests
         run: make test
 
+      - name: Get current date
+        id: get_date
+        run: |
+           echo "RELEASE_DATE=$(date '+%b %d, %Y')" >> $GITHUB_ENV
+           echo "RELEASE_DATE_ISO8601=$(date '+%Y%m%d')" >> $GITHUB_ENV
+
       - name: Run build
         run: make build
 
@@ -102,7 +108,7 @@ jobs:
               file_ext=".zip"
             fi
             if [ -f "./build/${GOOS}/${GOARCH}/${{ env.PROJECT_NAME }}" ]; then
-              VERSION=${{ env.NEXT_VERSION }}
+              VERSION=${{ env.RELEASE_DATE_ISO8601 }}
               PACKAGE_NAME="${{ env.PROJECT_NAME }}_${VERSION}_${GOOS}_${GOARCH}${file_ext}"
               tar -czvf "$PACKAGE_NAME" -C ./build ./${GOOS}/${GOARCH}
             else
@@ -111,9 +117,21 @@ jobs:
           done
         working-directory: ${{ github.workspace }}
 
-      - name: Get current date
-        id: get_date
-        run: echo "RELEASE_DATE=$(date '+%b %d, %Y')" >> $GITHUB_ENV
+      - name: Get previous tag
+        id: previousTag
+        run: |
+          name=$(git --no-pager tag --sort=creatordate --merged ${{ github.ref_name }} | tail -2 | head -1)
+          echo "previousTag: $name"
+          echo "previousTag=$name" >> $GITHUB_ENV
+
+      - name: Update CHANGELOG
+        id: changelog
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ github.token }}
+          fromTag: ${{ github.ref_name }}
+          toTag: ${{ env.previousTag }}
+          writeToFile: false
 
       - name: Create release
         id: create_release
@@ -122,11 +140,10 @@ jobs:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          body: ${{ steps.changelog.outputs.changes }}
           tag_name: "dev"
-          name: "Nightly Release (${{ env.RELEASE_DATE }})"
-          prerelease: true
+          name: "DEV Release (${{ env.RELEASE_DATE }})"
           body: ${{ env.commits }}
-          generate_release_notes: true
           files: |
               ./*.tar.gz
               ./*.zip

@@ -2,7 +2,7 @@
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
 # Binaries for programs and plugins
-kdeps
+runner
 runner_*
 *.exe
 *.exe~
@@ -11,7 +11,7 @@ runner_*
 *.dylib
 
 # build dir
-build/kdeps**/**
+build/**/**
 
 # Test binary, built with `go test -c`
 *.test
@@ -25,3 +25,4 @@ build/kdeps**/**
 # Go workspace file
 go.work
 .DS_Store
+build/
