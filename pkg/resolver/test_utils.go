@@ -1,11 +1,12 @@
 package resolver
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -39,36 +40,34 @@ func captureOutput(f func()) string {
 	return <-outC
 }
 
-func createWorkDir() (string, error) {
+func createWorkDir() string {
 	tmpDir, err := os.MkdirTemp("", "runner_workdir")
 	if err != nil {
-		return "", err
+		log.Fatalf("Failed to create work directory: %v", err)
 	}
-	return tmpDir, nil
+	return tmpDir
 }
 
 func writeEnvToFile(envFilePath string) error {
 	envFile, err := os.Create(envFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating env file: %w", err)
 	}
 	envFile.Sync()
 	defer envFile.Close()
 
-	os.Setenv("RUNNER_ENV", envFilePath)
+	if err = os.Setenv("RUNNER_ENV", envFilePath); err != nil {
+		return err
+	}
 
 	for _, env := range os.Environ() {
-		// Split the environment variable into key and value
-		parts := strings.SplitN(env, "=", 2)
-		key := parts[0]
-		value := parts[1]
+		keyValue := strings.SplitN(env, "=", 2)
+		key, value := keyValue[0], keyValue[1]
 
-		// Quote the value if it contains special characters or spaces
 		if strings.ContainsAny(value, " \t\n\r\"'") {
 			value = strconv.Quote(value)
 		}
 
-		// Write the environment variable to the file
 		if _, err := envFile.WriteString(fmt.Sprintf("%s=%s\n", key, value)); err != nil {
 			return err
 		}
@@ -77,18 +76,49 @@ func writeEnvToFile(envFilePath string) error {
 }
 
 func sourceEnvFile(envFilePath string) error {
-	// cmd := exec.Command("sh", "-c", "set -a && source "+envFilePath+" && set +a")
-	cmd := exec.Command("sh", "-c", "set -a && source "+envFilePath+" 2>/dev/null && set +a")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	LogWarn(fmt.Sprintf("Sourcing environment file from path: %s", envFilePath))
+
+	file, err := os.Open(envFilePath)
+	if err != nil {
+		return LogError(fmt.Sprintf("Failed to open environment file: %s - %v", envFilePath, err), err)
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			LogError(fmt.Sprintf("Failed to close environment file: %s - %v", envFilePath, err), err)
+		} else {
+			LogInfo(fmt.Sprintf("Successfully closed environment file: %s", envFilePath))
+		}
+	}(file)
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		LogDebug(fmt.Sprintf("Processing line: %s", line))
+
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			return LogError(fmt.Sprintf("Invalid environment variable declaration: %s in file: %s", line, envFilePath), err)
+		}
+
+		key := parts[0]
+		value := strings.Trim(parts[1], "\"")
+		if err := os.Setenv(key, value); err != nil {
+			return LogError(fmt.Sprintf("Failed to set environment variable %s: %v - %s", key, err, envFilePath), err)
+		}
+		LogInfo(fmt.Sprintf("Set environment variable %s=%s", key, value))
+	}
+
+	if err := scanner.Err(); err != nil {
+		return LogError(fmt.Sprintf("Error reading environment file: %s - %v", envFilePath, err), err)
+	}
+
+	LogInfo(fmt.Sprintf("Successfully sourced environment file: %s", envFilePath))
+	return nil
 }
 
 func setup() (string, func()) {
-	workDir, err := createWorkDir()
-	if err != nil {
-		logger.Fatalf("Failed to create work directory: %v", err)
-	}
+	workDir := createWorkDir()
 
 	// Set up signal handling to clean up on interruption
 	cleanup := func() {

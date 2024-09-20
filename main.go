@@ -66,6 +66,7 @@ func writeEnvToFile(envFilePath string) error {
 	if err != nil {
 		return fmt.Errorf("error creating env file: %w", err)
 	}
+	envFile.Sync()
 	defer envFile.Close()
 
 	if err = os.Setenv("RUNNER_ENV", envFilePath); err != nil {
