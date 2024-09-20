@@ -117,12 +117,6 @@ jobs:
           done
         working-directory: ${{ github.workspace }}
 
-      - name: Get version
-        id: get_version
-        run: |
-          echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-          echo ${{ VERSION }}
-
       - name: Generate changes file
         uses: sarnold/gitchangelog-action@master
         with:
