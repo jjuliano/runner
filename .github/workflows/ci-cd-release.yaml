@@ -112,21 +112,16 @@ jobs:
           done
         working-directory: ${{ github.workspace }}
 
-      - name: Get previous tag
-        id: previousTag
+      - name: Get version
+        id: get_version
         run: |
-          name=$(git --no-pager tag --sort=creatordate --merged ${{ github.ref_name }} | tail -2 | head -1)
-          echo "previousTag: $name"
-          echo "previousTag=$name" >> $GITHUB_ENV
+          echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+          echo ${{ VERSION }}
 
-      - name: Update CHANGELOG
-        id: changelog
-        uses: requarks/changelog-action@v1
+      - name: Generate changes file
+        uses: sarnold/gitchangelog-action@master
         with:
-          token: ${{ github.token }}
-          fromTag: ${{ github.ref_name }}
-          toTag: ${{ env.previousTag }}
-          writeToFile: false
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release
         if: github.event.action == 'closed' && github.event.pull_request.merged == true
@@ -136,9 +131,9 @@ jobs:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          body_path: CHANGES.MD
           tag_name: "${{ env.NEXT_VERSION }}"
           name: "Release ${{ env.NEXT_VERSION }} (${{ env.RELEASE_DATE }})"
-          body: ${{ steps.changelog.outputs.changes }}
           files: |
               ./*.tar.gz
               ./*.zip
