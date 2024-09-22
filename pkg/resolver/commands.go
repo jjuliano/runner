@@ -94,7 +94,7 @@ func SourceEnvFile(envFilePath string) error {
         if err != nil {
             LogError(fmt.Sprintf("Failed to close environment file: %s - %v", envFilePath, err), err)
         } else {
-            LogInfo(fmt.Sprintf("Successfully closed environment file: %s", envFilePath))
+            LogDebug(fmt.Sprintf("Successfully closed environment file: %s", envFilePath))
         }
     }(file)
 
@@ -113,14 +113,14 @@ func SourceEnvFile(envFilePath string) error {
         if err := os.Setenv(key, value); err != nil {
             return LogError(fmt.Sprintf("Failed to set environment variable %s: %v - %s", key, err, envFilePath), err)
         }
-        LogInfo(fmt.Sprintf("Set environment variable %s=%s", key, value))
+        LogDebug(fmt.Sprintf("Set environment variable %s=%s", key, value))
     }
 
     if err := scanner.Err(); err != nil {
         return LogError(fmt.Sprintf("Error reading environment file: %s - %v", envFilePath, err), err)
     }
 
-    LogInfo(fmt.Sprintf("Successfully sourced environment file: %s", envFilePath))
+    LogDebug(fmt.Sprintf("Successfully sourced environment file: %s", envFilePath))
     return nil
 }
 
@@ -142,7 +142,7 @@ func ProcessSingleNodeRule(element interface{}, client *http.Client, logs *Runne
         if HasValidRulePrefix(val) {
             return expect.CheckExpectations(logs.GetAllMessageString(), 0, []string{val}, client)
         } else {
-            LogDebug(fmt.Sprintf("Skipping check condition '%s' unsupported.", val))
+            LogInfo(fmt.Sprintf("Skipping check condition '%s' unsupported.", val))
         }
     case map[interface{}]interface{}:
         if expectVal, exists := val["expect"]; exists {
@@ -168,7 +168,7 @@ func ProcessResourceNodeRules(expectations []interface{}, client *http.Client, l
 
 // HasValidRulePrefix checks if the string has a valid prefix for checks.
 func HasValidRulePrefix(s string) bool {
-    prefixes := []string{"ENV:", "FILE:", "DIR:", "URL:", "CMD:", "EXEC:", "!"}
+    prefixes := []string{"ENV:", "FILE:", "DIR:", "URL:", "CMD:", "EXEC:", "!", "@", "!@"}
     for _, prefix := range prefixes {
         if strings.HasPrefix(s, prefix) {
             return true
@@ -279,7 +279,7 @@ func (dr *DependencyResolver) HandleRunCommand(resources []string) error {
 
 // ResolveResourceNodeDependency resolves the dependency for a given resource node.
 func (dr *DependencyResolver) ResolveResourceNodeDependency(resNode string, res ResourceNodeEntry, logs *RunnerLogs, client *http.Client) {
-    LogInfo("ð Resolving dependency " + resNode)
+    LogInfo("Resolving dependency " + resNode)
     if res.Run == nil {
         LogInfo("No run steps found for resource " + resNode)
         return
@@ -335,7 +335,7 @@ func (dr *DependencyResolver) BuildNodeSkipMap(steps []RunStep, resNode string, 
 // HandleResourceNodeStep handles the execution and logging of a step.
 func (dr *DependencyResolver) HandleResourceNodeStep(step RunStep, resNode string, skip map[StepKey]bool, logs *RunnerLogs, client *http.Client) {
     skipKey := StepKey{name: step.Name, node: resNode}
-    // LogDebug(fmt.Sprintf("Skip key '%v' = %v", skipKey, skip[skipKey]))
+    LogDebug(fmt.Sprintf("Skip key '%v' = %v", skipKey, skip[skipKey]))
 
     if skip[skipKey] {
         logs.Add(StepLog{targetRes: resNode, command: step.Exec, id: resNode, name: step.Name, message: "Step skipped."})

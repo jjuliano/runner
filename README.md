@@ -96,17 +96,26 @@ git -> jdberry-tag -> ai-tag -> ai-organize-file
 
 Define conditions that need to be met before (`check:`) or after (`expect:`) a step runs. You can also specify skip conditions using the `skip:` array.
 
-Negate any condition by prefixing it with `!`.
-
 ```yaml
 check:
   - "ENV:THIS_PREFLIGHT_ENV_VAR_SHOULD_EXIST"
   - "!ENV:SHOULD_NOT_EXIST"
+  - "@URL:https://example.com:3000/api/v2"
 expect:
   - "CMD:this_postflight_command_check_should_be_available_in_path"
 skip:
   - "FILE:/skip/if/this/file/exists.txt"
 ```
+
+### Negation and Persistence Flags
+
+You can negate a condition by prefixing it with `!`, for example, `!ENV:SHOULD_NOT_EXIST`.
+
+To make a condition persistent, prefix it with `@`, such as `@FILE:/tmp/awaiting_for_this_file.txt`.
+Persistent conditions will be retried until they are satisfied.
+
+Persistent flags applies to all prefixes except `ENV:`. It can be combined with
+negation. i.e. "!@CMD:SHOULD_BE_NOT_AVAILABLE"
 
 ### Supported Check Prefixes
 
@@ -116,6 +125,7 @@ skip:
 - `URL:` – Confirms if a URL is reachable.
 - `CMD:` – Ensures a command is available in the `$PATH`.
 - `EXEC:` – Runs a command to check if it completes successfully (exit code 0).
+- `a string value:` - Check if the text exists on the output.
 
 ### Setting Environment Variables
 
