@@ -1,7 +1,7 @@
 # Variables
 PROJECT_NAME := runner
-TEST_REPORT := test-report.out
-COVERAGE_REPORT := coverage.out
+TEST_REPORT := test-report.txt
+COVERAGE_REPORT := coverage.txt
 PACKAGE_LIST := ./...
 RELEASE_DATE_ISO8601 := $(shell date '+%Y%m%d')
 TARGETS := $(shell go tool dist list)
