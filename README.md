@@ -1,3 +1,7 @@
+[![codecov](https://codecov.io/github/jjuliano/runner/graph/badge.svg?token=J1SLROZARW)](https://codecov.io/github/jjuliano/runner)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jjuliano/runner)](https://goreportcard.com/report/github.com/jjuliano/runner)
+[![CI/CD - Release](https://github.com/jjuliano/runner/actions/workflows/ci-cd-release.yaml/badge.svg)](https://github.com/jjuliano/runner/actions/workflows/ci-cd-release.yaml)
+
 # runner
 **runner** is a graph-based orchestrator designed to calculate and execute workflows in the correct order, based on their dependencies. With **runner**, you can simplify complex shell scripts and streamline your workflow automation.
 
