@@ -27,12 +27,16 @@ jobs:
         with:
           go-version: 1.22
 
+      - name: Set commits environment variable
+        run: |
+          echo "commits=$(git log --pretty=oneline | wc -l)" >> $GITHUB_ENV
+
       - name: Determine next version
         id: determine_version
         run: |
           NEXT_VERSION="0.1.0"
           if [[ -n "${{ env.commits }}" ]]; then
-            NEXT_VERSION="0.1.1"  # Update this based on your logic
+            NEXT_VERSION="0.1.1"
           fi
           echo "NEXT_VERSION=${NEXT_VERSION}" >> $GITHUB_ENV
 
@@ -126,7 +130,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           body_path: CHANGES.md
-          tag_name: "${{ env.NEXT_VERSION }}"
+          tag_name: "release/${{ env.NEXT_VERSION }}"
           name: "Release ${{ env.NEXT_VERSION }} (${{ env.RELEASE_DATE }})"
           files: |
               ./*.tar.gz

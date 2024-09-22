@@ -124,7 +124,7 @@ jobs:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "dev"
+          tag_name: "dev/${{ env.RELEASE_DATE }}"
           name: "DEV Release (${{ env.RELEASE_DATE }})"
           files: |
               ./*.tar.gz
