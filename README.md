@@ -119,7 +119,7 @@ To make a condition persistent, prefix it with `@`, such as `@FILE:/tmp/awaiting
 Persistent conditions will be retried until they are satisfied.
 
 Persistent flags applies to all prefixes except `ENV:`. It can be combined with
-negation. i.e. "!@CMD:SHOULD_BE_NOT_AVAILABLE"
+negation. i.e. `!@FILE:/tmp/file.sock`
 
 ### Supported Check Prefixes
 
