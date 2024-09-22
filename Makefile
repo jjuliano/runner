@@ -2,7 +2,7 @@
 PROJECT_NAME := runner
 TEST_REPORT := test-report.out
 COVERAGE_REPORT := coverage.out
-PACKAGE_LIST := ./
+PACKAGE_LIST := ./...
 
 TARGETS := $(shell go tool dist list)
 
