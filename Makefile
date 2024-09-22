@@ -3,7 +3,7 @@ PROJECT_NAME := runner
 TEST_REPORT := test-report.out
 COVERAGE_REPORT := coverage.out
 PACKAGE_LIST := ./...
-
+RELEASE_DATE_ISO8601 := $(shell date '+%Y%m%d')
 TARGETS := $(shell go tool dist list)
 
 # Default target
@@ -25,11 +25,11 @@ build:
 			continue; \
 		fi; \
 		echo "Building for $$X_OS/$$X_ARCH..."; \
-		mkdir -p ./build/$(PROJECT_NAME)_$$X_OS_$$X_ARCH || { \
+		mkdir -p ./build/$$X_OS/$$X_ARCH/$(RELEASE_DATE_ISO8601)/ || { \
 			echo "Failed to create directory ./build/$(PROJECT_NAME)_$$X_OS_$$X_ARCH"; \
 			continue; \
 		}; \
-		GOOS=$$X_OS GOARCH=$$X_ARCH go build -o ./build/$$X_OS/$$X_ARCH/$(PROJECT_NAME) $(PACKAGE_LIST) || { \
+		GOOS=$$X_OS GOARCH=$$X_ARCH go build -o ./build/$$X_OS/$$X_ARCH/$(RELEASE_DATE_ISO8601)/ $(PACKAGE_LIST) || { \
 			echo "Build failed for $$X_OS/$$X_ARCH"; \
 			continue; \
 		}; \

@@ -103,24 +103,19 @@ jobs:
           for platform in "${platforms[@]}"; do
             GOOS=${platform%/*}
             GOARCH=${platform#*/}
+            VERSION=${{ env.RELEASE_DATE_ISO8601 }}
             file_ext=".tar.gz"
             if [ "$GOOS" = "windows" ]; then
               file_ext=".zip"
             fi
-            if [ -f "./build/${GOOS}/${GOARCH}/${{ env.PROJECT_NAME }}" ]; then
-              VERSION=${{ env.RELEASE_DATE_ISO8601 }}
+            if [ -f "./build/${GOOS}/${GOARCH}/${VERSION}/${{ env.PROJECT_NAME }}" ]; then
               PACKAGE_NAME="${{ env.PROJECT_NAME }}_${VERSION}_${GOOS}_${GOARCH}${file_ext}"
-              tar -czvf "$PACKAGE_NAME" -C ./build ./${GOOS}/${GOARCH}
+              tar -czvf "$PACKAGE_NAME" -C ./build ./${GOOS}/${GOARCH}/${VERSION}/
             else
-              echo "Skipping packaging for $GOOS/$GOARCH as the binary does not exist."
+              echo "Skipping packaging for ${VERSION}/$GOOS/$GOARCH as the binary does not exist."
             fi
           done
         working-directory: ${{ github.workspace }}
-
-      - name: Generate changes file
-        uses: sarnold/gitchangelog-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release
         id: create_release
@@ -129,7 +124,6 @@ jobs:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          body_path: CHANGES.md
           tag_name: "dev"
           name: "DEV Release (${{ env.RELEASE_DATE }})"
           files: |
