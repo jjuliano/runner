@@ -27,6 +27,12 @@ jobs:
         with:
           go-version: 1.22
 
+      - name: Get current date
+        id: get_date
+        run: |
+           echo "RELEASE_DATE=$(date '+%b %d, %Y')" >> $GITHUB_ENV
+           echo "RELEASE_DATE_ISO8601=$(date '+%Y%m%d')" >> $GITHUB_ENV
+
       - name: Set commits environment variable
         run: |
           echo "commits=$(git log --pretty=oneline | wc -l)" >> $GITHUB_ENV
@@ -103,23 +109,19 @@ jobs:
             GOOS=${platform%/*}
             GOARCH=${platform#*/}
             VERSION=${{ env.NEXT_VERSION }}
+            DATE_VERSION=${{ env.RELEASE_DATE_ISO8601 }}
             file_ext=".tar.gz"
             if [ "$GOOS" = "windows" ]; then
               file_ext=".zip"
             fi
-            if [ -f "./build/${GOOS}/${GOARCH}/${VERSION}/${{ env.PROJECT_NAME }}" ]; then
+            if [ -f "./build/${GOOS}/${GOARCH}/${DATE_VERSION}/${{ env.PROJECT_NAME }}" ]; then
               PACKAGE_NAME="${{ env.PROJECT_NAME }}_${VERSION}_${GOOS}_${GOARCH}${file_ext}"
-              tar -czvf "$PACKAGE_NAME" -C ./build ./${GOOS}/${GOARCH}/${VERSION}/
+              tar -czvf "$PACKAGE_NAME" -C ./build ./${GOOS}/${GOARCH}/${DATE_VERSION}/
             else
-              echo "Skipping packaging for ${VERSION}/$GOOS/$GOARCH as the binary does not exist."
+              echo "Skipping packaging for ${DATE_VERSION}/$GOOS/$GOARCH as the binary does not exist."
             fi
           done
         working-directory: ${{ github.workspace }}
-
-      - name: Generate changes file
-        uses: sarnold/gitchangelog-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release
         if: github.event.action == 'closed' && github.event.pull_request.merged == true
@@ -129,7 +131,6 @@ jobs:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          body_path: CHANGES.md
           tag_name: "release/${{ env.NEXT_VERSION }}"
           name: "Release ${{ env.NEXT_VERSION }} (${{ env.RELEASE_DATE }})"
           files: |
