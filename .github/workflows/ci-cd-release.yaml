@@ -111,14 +111,16 @@ jobs:
             VERSION=${{ env.NEXT_VERSION }}
             DATE_VERSION=${{ env.RELEASE_DATE_ISO8601 }}
             file_ext=".tar.gz"
+            binary_ext=""
             if [ "$GOOS" = "windows" ]; then
+              binary_ext=".exe"
               file_ext=".zip"
             fi
-            if [ -f "./build/${GOOS}/${GOARCH}/${DATE_VERSION}/${{ env.PROJECT_NAME }}" ]; then
+            if [ -f "./build/${GOOS}/${GOARCH}/${DATE_VERSION}/${{ env.PROJECT_NAME }}${binary_ext}" ]; then
               PACKAGE_NAME="${{ env.PROJECT_NAME }}_${VERSION}_${GOOS}_${GOARCH}${file_ext}"
               tar -czvf "$PACKAGE_NAME" -C ./build ./${GOOS}/${GOARCH}/${DATE_VERSION}/
             else
-              echo "Skipping packaging for ${DATE_VERSION}/$GOOS/$GOARCH as the binary does not exist."
+              echo "Skipping packaging for $GOOS/$GOARCH/${DATE_VERSION}/${{ env.PROJECT_NAME }}${binary_ext} as the binary does not exist."
             fi
           done
         working-directory: ${{ github.workspace }}
