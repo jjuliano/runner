@@ -3,7 +3,7 @@
 [![CI/CD - Release](https://github.com/jjuliano/runner/actions/workflows/ci-cd-release.yaml/badge.svg)](https://github.com/jjuliano/runner/actions/workflows/ci-cd-release.yaml)
 
 # runner
-**runner** is a graph-based orchestrator designed to calculate and execute workflows in the correct order, based on their dependencies. With **runner**, you can simplify complex shell scripts and streamline your workflow automation.
+**runner** is a graph-based orchestrator that calculates and executes workflows in the correct order based on dependencies. It simplifies complex shell scripts into team-manageable YAML files, streamlining your workflow automations.
 
 ## Features
 
