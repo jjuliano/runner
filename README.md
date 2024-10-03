@@ -4,13 +4,39 @@
 # runner
 **runner** is a graph-based orchestrator that calculates and executes workflows in the correct order based on dependencies. It simplifies complex shell scripts into team-manageable YAML files, streamlining your workflow automations.
 
-## Features
+## How Does It Work?
+
+When you run a workflow, it will calculate the graphs based on the workflow dependencies.
+For example, if you have a `git` resource, and list it's reverse depdencies, this is the output.
+
+```text
+$ cd myService
+> myService $ runner rdepends git
+
+git
+git -> jdberry-tag
+git -> jdberry-tag -> ai-tag
+git -> jdberry-tag -> ai-tag -> ai-organize-file
+```
+
+If you run `ai-organize-file` workflow via `runner run ai-organize-file`,
+it will run the workflow on the following order:
+
+1. git
+2. jdberry-tag
+3. ai-tag
+4. ai-organize-file
+
+## What Does It Mean For Your Team?
 
 - **🛠 Simplified Automation**: Avoid piles of overly complex unmaintainable shell scripts. Use a structured and maintainable YAML configurations, making complex workflows team friendly, easy to collaborate, manage and understand.
 - **🚀 Optimized for Developer Experience (DX)**: Simplify the use of automation workflows for your team, whether it's compiling code & running services in Kubernetes, or managing deployments, making day-to-day tasks more time-saving, efficient and accessible.
 - **🔄 GitOps-Ready**: Store your scripts and workflows in version control as a single source of truth, enabling seamless tracking, collaboration, and deployment.
+
+### Also, there are some nice features
+
 - **⚙️ CI/CD Integration**: Deploy **runner** within Docker images or as part of your CI/CD pipelines.
-- **🔧 Language Agnostic**: Use 99% YAML configurations, and shell scripts for execution. No Python or JavaScript required.
+- **🔧 Language Agnostic**: Use 99% YAML configurations, and shell scripts for execution.
 - **🌍 Cross-Platform & Multiarchitecture**: Supporting over 40 architectures, **runner** seamlessly adapts whether you’re deploying on cloud infrastructure, Kubernetes clusters, bare-metal machines, or lightweight IoT devices like Raspberry Pi and Arduino.
 - **🌐 HTTPs Resource Support**: Include YAML resources from local files or external URLs in your workflows, which makes it easier to share and reuse other workflows.
 
@@ -82,6 +108,7 @@ $ cd myService
 List direct or reverse dependencies, and more.
 
 ```bash
+$ cd myService
 > myService $ runner rdepends git # show reverse dependencies
 > myService $ runner depends git  # show direct dependencies
 > myService $ runner index        # list all myService resources
@@ -89,15 +116,6 @@ List direct or reverse dependencies, and more.
 > myService $ runner show git     # show the resource
 > myService $ runner category     # list all myService resource categories
 > myService $ runner run git      # run the git workflow
-```
-
-Example output:
-
-```text
-git
-git -> jdberry-tag
-git -> jdberry-tag -> ai-tag
-git -> jdberry-tag -> ai-tag -> ai-organize-file
 ```
 
 ## Advanced Usage
