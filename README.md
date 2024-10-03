@@ -1,4 +1,3 @@
-[![codecov](https://codecov.io/github/jjuliano/runner/graph/badge.svg?token=J1SLROZARW)](https://codecov.io/github/jjuliano/runner)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jjuliano/runner)](https://goreportcard.com/report/github.com/jjuliano/runner)
 [![CI/CD - Release](https://github.com/jjuliano/runner/actions/workflows/ci-cd-release.yaml/badge.svg)](https://github.com/jjuliano/runner/actions/workflows/ci-cd-release.yaml)
 
@@ -74,15 +73,22 @@ resources:
 Run the workflow by specifying the desired resource.
 
 ```bash
-$ runner run backend1
+$ cd myService
+> myService $ runner run backend1
 ```
 
 ### Step 4: (Optional) Explore Dependencies
 
-List direct or reverse dependencies.
+List direct or reverse dependencies, and more.
 
 ```bash
-$ runner rdepends git
+> myService $ runner rdepends git # show reverse dependencies
+> myService $ runner depends git  # show direct dependencies
+> myService $ runner index        # list all myService resources
+> myService $ runner search git   # search for a resource
+> myService $ runner show git     # show the resource
+> myService $ runner category     # list all myService resource categories
+> myService $ runner run git      # run the git workflow
 ```
 
 Example output:
